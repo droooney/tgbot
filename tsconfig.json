@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "module": "esnext",
+    "target": "es2022",
+    "strict": true,
+    "outDir": "./dist",
+    "lib": ["ESNext"],
+    "sourceMap": true,
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "baseUrl": "."
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["**/node_modules/*", "**/dist/*"]
+}
