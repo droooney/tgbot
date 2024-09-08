@@ -3,21 +3,7 @@ const CHARACTERS_TO_ESCAPE = /[_*[\]()~`>#+\-=|{}.!\\]/g;
 export type MarkdownAllowedEntity = string | number | bigint | false | null | undefined | Markdown;
 
 export class Markdown {
-  // TODO: add support for expandable
-  static blockquote(value: MarkdownAllowedEntity, expandable: boolean = false): Markdown {
-    return new Markdown(
-      Markdown.stringifyForMarkdown(value)
-        .split('\n')
-        .map((value) => `> ${value}`)
-        .join('\n'),
-    );
-  }
-
-  static bold(value: MarkdownAllowedEntity): Markdown {
-    return new Markdown(`*${Markdown.stringifyForMarkdown(value)}*`);
-  }
-
-  private static compile(strings: TemplateStringsArray, ...entities: MarkdownAllowedEntity[]): string {
+  private static _compile(strings: TemplateStringsArray, ...entities: MarkdownAllowedEntity[]): string {
     return entities.reduce<string>(
       (text, entity, index) => {
         const entityString = Markdown.stringifyForMarkdown(entity);
@@ -28,6 +14,20 @@ export class Markdown {
     );
   }
 
+  static blockquote(value: string, expandable: boolean = false): Markdown {
+    return new Markdown(
+      `**${Markdown.stringifyForMarkdown(value)
+        .split('\n')
+        .map((value) => `> ${value}`)
+        .join('\n')
+        .trim()}${expandable ? '||' : ''}`,
+    );
+  }
+
+  static bold(value: MarkdownAllowedEntity): Markdown {
+    return new Markdown(`*${Markdown.stringifyForMarkdown(value)}*`);
+  }
+
   static code(language: string | null | undefined, value: string): Markdown {
     return new Markdown(`\`\`\`${language ?? ''}
 ${Markdown.stringifyForMarkdown(value).trim()}
@@ -35,7 +35,7 @@ ${Markdown.stringifyForMarkdown(value).trim()}
   }
 
   static create(strings: TemplateStringsArray, ...entities: MarkdownAllowedEntity[]): Markdown {
-    return new Markdown(Markdown.compile(strings, ...entities));
+    return new Markdown(Markdown._compile(strings, ...entities));
   }
 
   static customEmoji(emojiId: string, emoji: string): Markdown {
@@ -51,7 +51,7 @@ ${Markdown.stringifyForMarkdown(value).trim()}
   }
 
   static italic(value: MarkdownAllowedEntity): Markdown {
-    return new Markdown(`_${Markdown.stringifyForMarkdown(value)}_`);
+    return new Markdown(`**_**${Markdown.stringifyForMarkdown(value)}**_**`);
   }
 
   static join(markdowns: MarkdownAllowedEntity[], joiner: MarkdownAllowedEntity): Markdown {
@@ -109,7 +109,7 @@ ${Markdown.stringifyForMarkdown(value).trim()}
   }
 
   add(strings: TemplateStringsArray, ...entities: MarkdownAllowedEntity[]): void {
-    this._value += Markdown.compile(strings, ...entities);
+    this._value += Markdown._compile(strings, ...entities);
   }
 
   isEmpty(): boolean {

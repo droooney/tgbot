@@ -8,6 +8,7 @@ import { TelegramBotError, TelegramBotErrorCode } from './TelegramBotError';
 import { CallbackDataProvider } from './callbackData';
 import { CallbackQueryResponse, MessageResponse, TextResponse } from './response';
 import { UserDataProvider } from './userData';
+import { prepareErrorForLogging } from './utils/error';
 
 export type MessageErrorResponseContext = {
   err: unknown;
@@ -106,6 +107,14 @@ export class TelegramBot<
     this._getCallbackQueryErrorResponse = options.getCallbackQueryErrorResponse;
   }
 
+  private _emitResponseError(err: unknown): void {
+    if (this.listenerCount('responseError') > 0) {
+      this.emit('responseError', err);
+    } else {
+      console.log(prepareErrorForLogging(err));
+    }
+  }
+
   // TODO: research text limit
   async answerCallbackQuery(queryId: string, text: string): Promise<boolean> {
     return this.api.answerCallbackQuery(queryId, {
@@ -141,7 +150,7 @@ export class TelegramBot<
   async start(): Promise<void> {
     this.api.on('message', async (message) => {
       try {
-        const { from: user, text, document } = message;
+        const { from: user, text } = message;
 
         if (!user || !this.isUserAllowed(user)) {
           return;
@@ -177,7 +186,7 @@ export class TelegramBot<
           });
         }
       } catch (err) {
-        this.emit('responseError', err);
+        this._emitResponseError(err);
 
         try {
           const response = await this._getMessageErrorResponse?.({
@@ -190,7 +199,7 @@ export class TelegramBot<
             bot: this,
           });
         } catch (err) {
-          this.emit('responseError', err);
+          this._emitResponseError(err);
         }
       }
     });
@@ -238,7 +247,7 @@ export class TelegramBot<
           });
         }
       } catch (err) {
-        this.emit('responseError', err);
+        this._emitResponseError(err);
 
         if (!query.message) {
           return;
@@ -260,7 +269,7 @@ export class TelegramBot<
             await this.answerCallbackQuery(query.id, '');
           }
         } catch (err) {
-          this.emit('responseError', err);
+          this._emitResponseError(err);
         }
       }
     });

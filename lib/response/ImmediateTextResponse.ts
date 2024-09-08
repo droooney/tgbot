@@ -31,11 +31,21 @@ class ImmediateTextResponse<CallbackData> extends TextResponse {
     this.disableWebPagePreview = options.disableWebPagePreview;
   }
 
+  private _getParseMode(): ParseMode | undefined {
+    return this.text instanceof Markdown ? 'MarkdownV2' : this.parseMode;
+  }
+
+  private _getReplyMarkup<CommandType extends BaseCommand, BotCallbackData, UserData>(
+    bot: CallbackData extends BotCallbackData ? TelegramBot<CommandType, BotCallbackData, UserData> : never,
+  ): InlineKeyboardMarkup | undefined {
+    return this.keyboard && prepareInlineKeyboard(bot, this.keyboard as InlineKeyboard<BotCallbackData>);
+  }
+
   async editMessage<CommandType extends BaseCommand, BotCallbackData, UserData>(
     ctx: CallbackData extends BotCallbackData ? EditMessageContext<CommandType, BotCallbackData, UserData> : never,
   ): Promise<Message> {
     const newText = this.text.toString();
-    const newReplyMarkup = this.getReplyMarkup(ctx.bot as never);
+    const newReplyMarkup = this._getReplyMarkup(ctx.bot as never);
     let editedMessage: Message | null = null;
 
     if (newText !== ctx.message.text || !isEqual(ctx.message.reply_markup, newReplyMarkup)) {
@@ -43,7 +53,7 @@ class ImmediateTextResponse<CallbackData> extends TextResponse {
         const editResult = await ctx.bot.api.editMessageText(this.text.toString(), {
           chat_id: ctx.message.chat.id,
           message_id: ctx.message.message_id,
-          parse_mode: this.getParseMode(),
+          parse_mode: this._getParseMode(),
           reply_markup: newReplyMarkup,
           disable_web_page_preview: this.disableWebPagePreview,
         });
@@ -65,23 +75,13 @@ class ImmediateTextResponse<CallbackData> extends TextResponse {
     return editedMessage;
   }
 
-  private getParseMode(): ParseMode | undefined {
-    return this.text instanceof Markdown ? 'MarkdownV2' : this.parseMode;
-  }
-
-  private getReplyMarkup<CommandType extends BaseCommand, BotCallbackData, UserData>(
-    bot: CallbackData extends BotCallbackData ? TelegramBot<CommandType, BotCallbackData, UserData> : never,
-  ): InlineKeyboardMarkup | undefined {
-    return this.keyboard && prepareInlineKeyboard(bot, this.keyboard as InlineKeyboard<BotCallbackData>);
-  }
-
   async sendMessage<CommandType extends BaseCommand, BotCallbackData, UserData>(
     ctx: CallbackData extends BotCallbackData ? SendMessageContext<CommandType, BotCallbackData, UserData> : never,
   ): Promise<Message> {
     return ctx.bot.api.sendMessage(ctx.chatId, this.text.toString(), {
       reply_to_message_id: ctx.replyToMessageId,
-      parse_mode: this.getParseMode(),
-      reply_markup: this.getReplyMarkup(ctx.bot as never),
+      parse_mode: this._getParseMode(),
+      reply_markup: this._getReplyMarkup(ctx.bot as never),
       disable_web_page_preview: this.disableWebPagePreview,
     });
   }
