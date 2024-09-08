@@ -1,6 +1,4 @@
-import { TelegramBot } from '../../lib';
-import { Markdown } from '../../lib/Markdown';
-import ImmediateTextResponse from '../../lib/response/ImmediateTextResponse';
+import { ImmediateTextResponse, Markdown, TelegramBot } from '../../lib';
 import { CreateBot } from '../runExample';
 
 const commands = {

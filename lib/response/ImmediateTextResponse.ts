@@ -17,7 +17,7 @@ export interface ImmediateTextResponseOptions<CallbackData> {
   disableWebPagePreview?: boolean;
 }
 
-class ImmediateTextResponse<CallbackData> extends TextResponse {
+export class ImmediateTextResponse<CallbackData> extends TextResponse {
   readonly text: string | Markdown;
   readonly parseMode?: ParseMode;
   readonly keyboard?: InlineKeyboard<CallbackData>;
@@ -86,5 +86,3 @@ class ImmediateTextResponse<CallbackData> extends TextResponse {
     });
   }
 }
-
-export default ImmediateTextResponse;
