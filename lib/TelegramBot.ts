@@ -48,7 +48,7 @@ export type TelegramBotOptions<CommandType extends BaseCommand, CallbackData, Us
 
 export type TextHandlerContext<CommandType extends BaseCommand, UserData> = {
   message: Message;
-  userData: UserData;
+  userData?: UserData;
   commands: CommandType[];
 };
 
@@ -156,11 +156,11 @@ export class TelegramBot<
       try {
         const { from: user, text } = message;
 
-        if (!user || !this.isUserAllowed(user)) {
+        if (user && !this.isUserAllowed(user)) {
           return;
         }
 
-        const userData = (await this.userDataProvider?.getOrCreateUserData(user.id)) as UserData;
+        const userData = user && (await this.userDataProvider?.getOrCreateUserData(user.id));
 
         let handler: TextHandler<CommandType, UserData> | null | undefined;
 
@@ -168,7 +168,7 @@ export class TelegramBot<
           handler = this._commandHandlers[text as CommandType];
         }
 
-        if (!handler) {
+        if (userData && !handler) {
           handler = this.userDataProvider?.getUserDataHandler(userData);
         }
 
@@ -212,7 +212,7 @@ export class TelegramBot<
       try {
         const { from: user, message, data } = query;
 
-        if (!user || !message || !this.isUserAllowed(user)) {
+        if (!message || !this.isUserAllowed(user)) {
           return;
         }
 
