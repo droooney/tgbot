@@ -1,10 +1,4 @@
-import {
-  EditMessageReplyMarkupOptions,
-  InlineKeyboardMarkup,
-  Message,
-  ParseMode,
-  SendBasicOptions,
-} from 'node-telegram-bot-api';
+import { LinkPreviewOptions, Message, ParseMode } from 'typescript-telegram-bot-api/dist/types';
 
 import { Markdown } from '../Markdown';
 import { BaseCommand } from '../TelegramBot';
@@ -15,7 +9,7 @@ export type MessageResponseTextContent = {
   type: 'text';
   text: string | Markdown;
   parseMode?: ParseMode;
-  disableWebPagePreview?: boolean;
+  linkPreviewOptions?: LinkPreviewOptions;
 };
 
 export type MessageResponseContent = MessageResponseTextContent;
@@ -36,9 +30,7 @@ export class ImmediateMessageResponse<CallbackData> extends MessageResponse<Call
   async editMessage<CommandType extends BaseCommand, BotCallbackData, UserData>(
     ctx: CallbackData extends BotCallbackData ? EditMessageContext<CommandType, BotCallbackData, UserData> : never,
   ): Promise<Message> {
-    const editBasicOptions: EditMessageReplyMarkupOptions & {
-      reply_markup?: InlineKeyboardMarkup;
-    } = {
+    const editBasicOptions = {
       chat_id: ctx.message.chat.id,
       message_id: ctx.message.message_id,
       reply_markup: this.getReplyMarkup(ctx.bot as never),
@@ -49,13 +41,11 @@ export class ImmediateMessageResponse<CallbackData> extends MessageResponse<Call
       let editedMessage: Message | null = null;
 
       try {
-        const editResult = await ctx.bot.api.editMessageText(content.text.toString(), {
-          chat_id: ctx.message.chat.id,
-          message_id: ctx.message.message_id,
+        const editResult = await ctx.bot.api.editMessageText({
+          ...editBasicOptions,
+          text: content.text.toString(),
           parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
-          reply_markup: this.getReplyMarkup(ctx.bot as never),
-          // TODO: replace
-          disable_web_page_preview: content.disableWebPagePreview,
+          link_preview_options: content.linkPreviewOptions,
         });
 
         if (typeof editResult === 'object') {
@@ -80,7 +70,8 @@ export class ImmediateMessageResponse<CallbackData> extends MessageResponse<Call
   async sendMessage<CommandType extends BaseCommand, BotCallbackData, UserData>(
     ctx: CallbackData extends BotCallbackData ? SendMessageContext<CommandType, BotCallbackData, UserData> : never,
   ): Promise<Message> {
-    const sendBasicOptions: SendBasicOptions = {
+    const sendBasicOptions = {
+      chat_id: ctx.chatId,
       message_thread_id: ctx.messageThreadId,
       disable_notification: ctx.disableNotification,
       reply_to_message_id: ctx.replyToMessageId,
@@ -91,11 +82,11 @@ export class ImmediateMessageResponse<CallbackData> extends MessageResponse<Call
     const { content } = this;
 
     if (content.type === 'text') {
-      return ctx.bot.api.sendMessage(ctx.chatId, content.text.toString(), {
+      return ctx.bot.api.sendMessage({
         ...sendBasicOptions,
+        text: content.text.toString(),
         parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
-        // TODO: replace
-        disable_web_page_preview: content.disableWebPagePreview,
+        link_preview_options: content.linkPreviewOptions,
       });
     }
 

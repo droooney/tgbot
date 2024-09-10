@@ -1,3 +1,4 @@
+import * as fs from 'node:fs';
 import path from 'node:path';
 
 import { ImmediateMessageResponse, TelegramBot } from '../../lib';
@@ -24,13 +25,18 @@ const createBot: CreateBot = (token) => {
 
     const info = await bot.api.getMe();
 
-    await bot.api.createNewStickerSet(
-      user.id,
-      `test_${Math.random().toString().slice(2)}_by_${info.username}`,
-      'Test Sticker Set',
-      path.resolve('./examples/assets/tree.png'),
-      '😁😃😅',
-    );
+    await bot.api.createNewStickerSet({
+      user_id: user.id,
+      name: `test_${Math.random().toString().slice(2)}_by_${info.username}`,
+      title: 'Test Sticker Set',
+      stickers: [
+        {
+          format: 'static',
+          sticker: fs.createReadStream(path.resolve('./examples/assets/tree.png')),
+          emoji_list: ['😁', '😃', '😅'],
+        },
+      ],
+    });
 
     return new ImmediateMessageResponse({
       content: {

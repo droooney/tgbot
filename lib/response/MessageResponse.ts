@@ -1,4 +1,4 @@
-import { InlineKeyboardMarkup, Message } from 'node-telegram-bot-api';
+import { InlineKeyboardMarkup, Message } from 'typescript-telegram-bot-api/dist/types';
 
 import { BaseCommand, TelegramBot } from '../TelegramBot';
 import { TelegramBotError, TelegramBotErrorCode } from '../TelegramBotError';
@@ -74,7 +74,9 @@ export abstract class MessageResponse<CallbackData> extends Response {
       });
     } catch (err) {
       if (err instanceof TelegramBotError && err.code === TelegramBotErrorCode.EditSameContent) {
-        await ctx.bot.answerCallbackQuery(queryId, '');
+        await ctx.bot.api.answerCallbackQuery({
+          callback_query_id: queryId,
+        });
       } else {
         throw err;
       }

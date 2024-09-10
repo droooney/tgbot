@@ -1,6 +1,7 @@
 import { EventEmitter } from 'node:events';
 
-import TelegramBotApi, { BotCommand, CallbackQuery, Message, User } from 'node-telegram-bot-api';
+import { TelegramBot as TelegramBotApi } from 'typescript-telegram-bot-api';
+import { BotCommand, CallbackQuery, Message, User } from 'typescript-telegram-bot-api/dist/types';
 
 import { TelegramBotError, TelegramBotErrorCode } from './TelegramBotError';
 import { CallbackDataProvider } from './callbackData';
@@ -93,10 +94,8 @@ export class TelegramBot<
   constructor(options: TelegramBotOptions<CommandType, CallbackData, UserData>) {
     super();
 
-    this.api = new TelegramBotApi(options.token, {
-      polling: {
-        autoStart: false,
-      },
+    this.api = new TelegramBotApi({
+      botToken: options.token,
     });
     this.commands = options.commands;
     this.callbackDataProvider = options.callbackDataProvider;
@@ -112,13 +111,6 @@ export class TelegramBot<
     } else {
       console.log(prepareErrorForLogging(err));
     }
-  }
-
-  // TODO: research text limit
-  async answerCallbackQuery(queryId: string, text: string): Promise<boolean> {
-    return this.api.answerCallbackQuery(queryId, {
-      text,
-    });
   }
 
   async editMessage(message: Message, response: MessageResponse<CallbackData>): Promise<Message> {
@@ -269,7 +261,9 @@ export class TelegramBot<
               query,
             });
           } else {
-            await this.answerCallbackQuery(query.id, '');
+            await this.api.answerCallbackQuery({
+              callback_query_id: query.id,
+            });
           }
         } catch (err) {
           this._emitResponseError(err);
@@ -297,7 +291,9 @@ export class TelegramBot<
           }
         }
 
-        await this.api.setMyCommands(commandsArray);
+        await this.api.setMyCommands({
+          commands: commandsArray,
+        });
       })(),
     ]);
   }
