@@ -1,8 +1,8 @@
-import { ImmediateTextResponse, Markdown, TelegramBot } from '../../lib';
+import { ImmediateMessageResponse, Markdown, TelegramBot } from '../../lib';
 import { CreateBot } from '../runExample';
 
 const commands = {
-  '/simple': 'Simple response',
+  '/simple': 'Simple text response',
   '/markdown': 'Markdown',
 };
 
@@ -15,20 +15,28 @@ const createBot: CreateBot = (token) => {
   });
 
   bot.handleCommand('/start', async () => {
-    return new ImmediateTextResponse({
-      text: 'Hi',
+    return new ImmediateMessageResponse({
+      content: {
+        type: 'text',
+        text: 'Hi',
+      },
     });
   });
 
   bot.handleCommand('/simple', async () => {
-    return new ImmediateTextResponse({
-      text: 'Simple response',
+    return new ImmediateMessageResponse({
+      content: {
+        type: 'text',
+        text: 'Simple text response',
+      },
     });
   });
 
   bot.handleCommand('/markdown', async () => {
-    return new ImmediateTextResponse({
-      text: Markdown.create`plain text
+    return new ImmediateMessageResponse({
+      content: {
+        type: 'text',
+        text: Markdown.create`plain text
 
 ${Markdown.bold('bold')}
 
@@ -91,6 +99,7 @@ blockqute row 9`,
   true,
 )}
 `,
+      },
     });
   });
 

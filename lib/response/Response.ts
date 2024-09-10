@@ -14,9 +14,9 @@ export type RespondToMessageContext<CommandType extends BaseCommand, CallbackDat
   message: Message;
 };
 
-export type MessageResponse = RequiredKeys<Response, 'respondToMessage'>;
+export type ResponseToMessage = RequiredKeys<Response, 'respondToMessage'>;
 
-export type CallbackQueryResponse = RequiredKeys<Response, 'respondToCallbackQuery'>;
+export type ResponseToCallbackQuery = RequiredKeys<Response, 'respondToCallbackQuery'>;
 
 export class Response {
   respondToMessage?<CommandType extends BaseCommand, CallbackData, UserData>(

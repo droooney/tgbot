@@ -6,7 +6,7 @@ import { MaybePromise } from './types';
 
 import { TelegramBotError, TelegramBotErrorCode } from './TelegramBotError';
 import { CallbackDataProvider } from './callbackData';
-import { CallbackQueryResponse, MessageResponse, TextResponse } from './response';
+import { MessageResponse, ResponseToCallbackQuery, ResponseToMessage } from './response';
 import { UserDataProvider } from './userData';
 import { prepareErrorForLogging } from './utils/error';
 
@@ -17,7 +17,7 @@ export type MessageErrorResponseContext = {
 
 export type GetMessageErrorResponse = (
   ctx: MessageErrorResponseContext,
-) => MaybePromise<MessageResponse | null | undefined | void>;
+) => MaybePromise<ResponseToMessage | null | undefined | void>;
 
 export type CallbackQueryErrorResponseContext = {
   err: unknown;
@@ -27,7 +27,7 @@ export type CallbackQueryErrorResponseContext = {
 
 export type GetCallbackQueryErrorResponse = (
   ctx: CallbackQueryErrorResponseContext,
-) => MaybePromise<CallbackQueryResponse | null | undefined | void>;
+) => MaybePromise<ResponseToCallbackQuery | null | undefined | void>;
 
 export type BotCommands<CommandType extends BaseCommand> = Partial<Record<CommandType, string>>;
 
@@ -54,7 +54,7 @@ export type TextHandlerContext<CommandType extends BaseCommand, UserData> = {
 
 export type TextHandler<CommandType extends BaseCommand, UserData> = (
   ctx: TextHandlerContext<CommandType, UserData>,
-) => MaybePromise<MessageResponse | null | undefined | void>;
+) => MaybePromise<ResponseToMessage | null | undefined | void>;
 
 export type CallbackQueryHandlerContext<CallbackData, UserData> = {
   data: CallbackData;
@@ -64,7 +64,7 @@ export type CallbackQueryHandlerContext<CallbackData, UserData> = {
 
 export type CallbackQueryHandler<CallbackData, UserData> = (
   ctx: CallbackQueryHandlerContext<CallbackData, UserData>,
-) => MaybePromise<CallbackQueryResponse | null | undefined | void>;
+) => MaybePromise<ResponseToCallbackQuery | null | undefined | void>;
 
 export type BaseCommand = `/${string}`;
 
@@ -122,7 +122,7 @@ export class TelegramBot<
     });
   }
 
-  async editMessage(message: Message, response: TextResponse): Promise<Message> {
+  async editMessage(message: Message, response: MessageResponse<CallbackData>): Promise<Message> {
     return response.editMessage({
       message,
       bot: this,
@@ -139,7 +139,11 @@ export class TelegramBot<
     return Boolean(user.username && (!this.usernameWhitelist || this.usernameWhitelist.includes(user.username)));
   }
 
-  async sendMessage(chatId: number, response: TextResponse, options?: SendMessageOptions): Promise<Message> {
+  async sendMessage(
+    chatId: number,
+    response: MessageResponse<CallbackData>,
+    options?: SendMessageOptions,
+  ): Promise<Message> {
     return response.sendMessage({
       chatId,
       bot: this,

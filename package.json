@@ -6,8 +6,8 @@
   "module": "dist/index.mjs",
   "scripts": {
     "build": "rm -rf dist && tsup lib/**.ts",
+    "example": "tsx --watch --env-file=.env examples/runExample.ts",
     "prepublish": "npm run build",
-    "runExample": "tsx --watch --env-file=.env examples/runExample.ts",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [
@@ -20,7 +20,6 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@types/lodash.isequal": "^4.5.8",
     "@types/node": "^22.5.4",
     "@types/node-telegram-bot-api": "^0.64.7",
     "@typescript-eslint/eslint-plugin": "^8.4.0",
@@ -34,7 +33,6 @@
     "zod": "^3.23.8"
   },
   "dependencies": {
-    "lodash.isequal": "^4.5.0",
     "node-telegram-bot-api": "^0.66.0"
   },
   "repository": {

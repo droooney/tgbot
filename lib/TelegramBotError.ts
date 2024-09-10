@@ -3,6 +3,7 @@ export const TelegramBotErrorCode = {
   EmptyButtonText: 'EmptyButtonText',
   LongCallbackData: 'LongCallbackData',
   UnsupportedCallbackData: 'UnsupportedCallbackData',
+  UnsupportedContent: 'UnsupportedContent',
 } as const;
 
 export type TelegramBotErrorCode = (typeof TelegramBotErrorCode)[keyof typeof TelegramBotErrorCode];
