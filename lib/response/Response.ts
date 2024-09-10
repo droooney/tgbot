@@ -1,8 +1,7 @@
 import { CallbackQuery, Message } from 'node-telegram-bot-api';
 
-import { RequiredKeys } from '../types';
-
 import { BaseCommand, TelegramBot } from '../TelegramBot';
+import { RequiredKeys } from '../types';
 
 export type RespondToCallbackQueryContext<CommandType extends BaseCommand, CallbackData, UserData> = {
   bot: TelegramBot<CommandType, CallbackData, UserData>;

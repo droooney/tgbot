@@ -6,9 +6,8 @@ import {
   SendBasicOptions,
 } from 'node-telegram-bot-api';
 
-import { BaseCommand } from '../TelegramBot';
-
 import { Markdown } from '../Markdown';
+import { BaseCommand } from '../TelegramBot';
 import { TelegramBotError, TelegramBotErrorCode } from '../TelegramBotError';
 import { EditMessageContext, MessageResponse, MessageResponseOptions, SendMessageContext } from './MessageResponse';
 

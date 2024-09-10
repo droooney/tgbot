@@ -1,5 +1,4 @@
 import { CallbackQueryHandler } from '../TelegramBot';
-
 import { CallbackDataProvider } from './CallbackDataProvider';
 
 export type BaseJsonCallbackDataType = string;

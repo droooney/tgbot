@@ -2,11 +2,10 @@ import { EventEmitter } from 'node:events';
 
 import TelegramBotApi, { BotCommand, CallbackQuery, Message, User } from 'node-telegram-bot-api';
 
-import { MaybePromise } from './types';
-
 import { TelegramBotError, TelegramBotErrorCode } from './TelegramBotError';
 import { CallbackDataProvider } from './callbackData';
 import { MessageResponse, ResponseToCallbackQuery, ResponseToMessage } from './response';
+import { MaybePromise } from './types';
 import { UserDataProvider } from './userData';
 import { prepareErrorForLogging } from './utils/error';
 

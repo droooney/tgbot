@@ -1,5 +1,4 @@
 import { CallbackQueryHandler } from '../TelegramBot';
-
 import { CallbackDataProvider } from './CallbackDataProvider';
 
 export class StringCallbackDataProvider<CallbackData extends string, UserData> extends CallbackDataProvider<

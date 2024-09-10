@@ -5,8 +5,9 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "scripts": {
-    "build": "rm -rf dist && tsup lib/**.ts",
+    "build": "rm -rf dist && tsup",
     "example": "tsx --watch --env-file=.env examples/runExample.ts",
+    "lint": "eslint . --ext .ts",
     "prepublish": "npm run build",
     "typecheck": "tsc --noEmit"
   },

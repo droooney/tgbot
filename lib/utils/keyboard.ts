@@ -1,7 +1,6 @@
 import { InlineKeyboardMarkup } from 'node-telegram-bot-api';
 
 import { BaseCommand, TelegramBot } from '../TelegramBot';
-
 import { TelegramBotError, TelegramBotErrorCode } from '../TelegramBotError';
 import { InlineKeyboard } from '../inlineKeyboard';
 import { isTruthy } from './is';

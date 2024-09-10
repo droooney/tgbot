@@ -21,17 +21,6 @@
         "groups": [
           "/^node:/",
           "module",
-          "/constants/",
-          "/api/",
-          "/db/",
-          "/(/|^)types?(/|$)/",
-          "/utilities\\//",
-          "/hooks\\//",
-          "/components\\//",
-          "/testCases/",
-          "/Bot$/",
-          "/client\\//",
-          "/server\\//",
           ["parent", "sibling", "index"]
         ],
         "alphabetize": {
