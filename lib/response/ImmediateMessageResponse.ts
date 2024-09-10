@@ -55,6 +55,7 @@ export class ImmediateMessageResponse<CallbackData> extends MessageResponse<Call
           message_id: ctx.message.message_id,
           parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
           reply_markup: this.getReplyMarkup(ctx.bot as never),
+          // TODO: replace
           disable_web_page_preview: content.disableWebPagePreview,
         });
 
