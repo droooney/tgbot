@@ -33,7 +33,7 @@ export class ImmediateMessageResponse<CallbackData> extends MessageResponse<Call
     const editBasicOptions = {
       chat_id: ctx.message.chat.id,
       message_id: ctx.message.message_id,
-      reply_markup: this.getReplyMarkup(ctx.bot as never),
+      reply_markup: await this.getReplyMarkup(ctx.bot as never),
     };
     const { content } = this;
 
@@ -75,7 +75,7 @@ export class ImmediateMessageResponse<CallbackData> extends MessageResponse<Call
       message_thread_id: ctx.messageThreadId,
       disable_notification: ctx.disableNotification,
       reply_to_message_id: ctx.replyToMessageId,
-      reply_markup: this.getReplyMarkup(ctx.bot as never),
+      reply_markup: await this.getReplyMarkup(ctx.bot as never),
       protect_content: ctx.protectContent,
       allow_sending_without_reply: ctx.allowSendingWithoutReply,
     };

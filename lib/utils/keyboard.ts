@@ -7,15 +7,37 @@ import { isTruthy } from './is';
 
 const BUTTON_TEXT_LIMIT = 120;
 
-export function prepareInlineKeyboard<CommandType extends BaseCommand, CallbackData, UserData>(
+export async function prepareInlineKeyboard<CommandType extends BaseCommand, CallbackData, UserData>(
   bot: TelegramBot<CommandType, CallbackData, UserData>,
   keyboard: InlineKeyboard<CallbackData>,
-): InlineKeyboardMarkup {
+): Promise<InlineKeyboardMarkup> {
+  const callbackDataPromises: Promise<{
+    rowIndex: number;
+    buttonIndex: number;
+    callbackData?: string;
+  }>[] = [];
+  const buttons = keyboard.filter(isTruthy).map((row) => row.filter(isTruthy));
+
+  buttons.forEach((row, rowIndex) => {
+    row.forEach((button, buttonIndex) => {
+      if (button.type === 'callback') {
+        callbackDataPromises.push(
+          (async () => ({
+            rowIndex,
+            buttonIndex,
+            callbackData: await bot.callbackDataProvider?.stringifyData(button.callbackData),
+          }))(),
+        );
+      }
+    });
+  });
+
+  const callbackDataValues = await Promise.all(callbackDataPromises);
+
   return {
-    inline_keyboard: keyboard
-      .filter(isTruthy)
-      .map((row) =>
-        row.filter(isTruthy).map((button) => {
+    inline_keyboard: buttons
+      .map((row, rowIndex) =>
+        row.map((button, buttonIndex) => {
           if (!button.text) {
             throw new TelegramBotError(TelegramBotErrorCode.EmptyButtonText);
           }
@@ -30,7 +52,54 @@ export function prepareInlineKeyboard<CommandType extends BaseCommand, CallbackD
             };
           }
 
-          const callbackDataString = bot.callbackDataProvider?.stringifyData(button.callbackData);
+          if (button.type === 'webApp') {
+            return {
+              text: buttonText,
+              web_app: button.appInfo as never,
+            };
+          }
+
+          if (button.type === 'login') {
+            return {
+              text: buttonText,
+              login_url: button.login,
+            };
+          }
+
+          if (button.type === 'switchInlineQuery') {
+            return {
+              text: buttonText,
+              ...(button.target === 'currentChat'
+                ? { switch_inline_query_current_chat: button.query }
+                : {
+                    switch_inline_query_chosen_chat: {
+                      query: button.query,
+                      allow_user_chats: typeof button.target === 'object' ? button.target.allowUsers : undefined,
+                      allow_bot_chats: typeof button.target === 'object' ? button.target.allowBots : undefined,
+                      allow_group_chats: typeof button.target === 'object' ? button.target.allowGroups : undefined,
+                      allow_channel_chats: typeof button.target === 'object' ? button.target.allowChannels : undefined,
+                    },
+                  }),
+            };
+          }
+
+          if (button.type === 'callbackGame') {
+            return {
+              text: buttonText,
+              callback_game: {},
+            };
+          }
+
+          if (button.type === 'pay') {
+            return {
+              text: buttonText,
+              pay: true,
+            };
+          }
+
+          const callbackDataString = callbackDataValues.find(
+            (value) => value.rowIndex === rowIndex && value.buttonIndex === buttonIndex,
+          )?.callbackData;
 
           if (callbackDataString && callbackDataString.length > 64) {
             throw new TelegramBotError(TelegramBotErrorCode.LongCallbackData, {

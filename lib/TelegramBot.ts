@@ -217,7 +217,7 @@ export class TelegramBot<
         }
 
         const userData = (await this.userDataProvider?.getOrCreateUserData(user.id)) as UserData;
-        const callbackData = this.callbackDataProvider.parseCallbackData(data);
+        const callbackData = await this.callbackDataProvider.parseCallbackData(data);
 
         if (callbackData == null) {
           return;

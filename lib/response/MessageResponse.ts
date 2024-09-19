@@ -52,10 +52,10 @@ export abstract class MessageResponse<CallbackData> extends Response {
     ctx: SendMessageContext<CommandType, CallbackData, UserData>,
   ): Promise<Message>;
 
-  getReplyMarkup<CommandType extends BaseCommand, BotCallbackData, UserData>(
+  async getReplyMarkup<CommandType extends BaseCommand, BotCallbackData, UserData>(
     bot: CallbackData extends BotCallbackData ? TelegramBot<CommandType, BotCallbackData, UserData> : never,
-  ): InlineKeyboardMarkup | undefined {
-    return this.replyMarkup && prepareInlineKeyboard(bot, this.replyMarkup as InlineKeyboard<BotCallbackData>);
+  ): Promise<InlineKeyboardMarkup | undefined> {
+    return this.replyMarkup && (await prepareInlineKeyboard(bot, this.replyMarkup as InlineKeyboard<BotCallbackData>));
   }
 
   async respondToCallbackQuery<CommandType extends BaseCommand, CallbackData, UserData>(
