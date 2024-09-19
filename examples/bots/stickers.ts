@@ -12,14 +12,14 @@ const commands = {
 
 type BotCommand = keyof typeof commands;
 
-const createBot: CreateBot = (token) => {
-  const callbackData = z.object({
-    type: z.literal('deleteSet'),
-    id: z.string(),
-  });
+const callbackData = z.object({
+  type: z.literal('deleteSet'),
+  id: z.string(),
+});
 
-  type CallbackData = z.TypeOf<typeof callbackData>;
+type CallbackData = z.TypeOf<typeof callbackData>;
 
+const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
   const callbackDataProvider = new JsonCallbackDataProvider<BotCommand, CallbackData>({
     parseJson: (json) => callbackData.parse(JSON.parse(json)),
   });

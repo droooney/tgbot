@@ -7,7 +7,7 @@ const commands = {
   '/markdown': 'Markdown',
 };
 
-const createBot: CreateBot = (token) => {
+const createBot: CreateBot<keyof typeof commands> = (token) => {
   const bot = new TelegramBot({
     token,
     commands,
@@ -73,28 +73,28 @@ ${Markdown.url('https://google.com', 'Google')}
 
 ${Markdown.telegramUser(493571366, 'tg:droooney')}
 
-${Markdown.blockquote(`blockqute start
-blockqute row 1
-blockqute row 2
-blockqute row 3
-blockqute row 4
-blockqute row 5
-blockqute row 6
-blockqute row 7
-blockqute row 8
-blockqute row 9`)}
+${Markdown.blockquote(`blockquote start
+blockquote row 1
+blockquote row 2
+blockquote row 3
+blockquote row 4
+blockquote row 5
+blockquote row 6
+blockquote row 7
+blockquote row 8
+blockquote row 9`)}
 
 ${Markdown.blockquote(
-  `expandable blockqute start
-blockqute row 1
-blockqute row 2
-blockqute row 3
-blockqute row 4
-blockqute row 5
-blockqute row 6
-blockqute row 7
-blockqute row 8
-blockqute row 9`,
+  `expandable blockquote start
+blockquote row 1
+blockquote row 2
+blockquote row 3
+blockquote row 4
+blockquote row 5
+blockquote row 6
+blockquote row 7
+blockquote row 8
+blockquote row 9`,
   true,
 )}
 `,
