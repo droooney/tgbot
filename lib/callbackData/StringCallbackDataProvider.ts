@@ -9,7 +9,7 @@ export class StringCallbackDataProvider<CallbackData extends string, UserData> e
     [Data in CallbackData]?: CallbackQueryHandler<Data, UserData>;
   } = {};
 
-  getCallbackQueryHandler<CbData extends CallbackData>(data: CbData): CallbackQueryHandler<CbData, UserData> | null {
+  getCallbackQueryHandler<Data extends CallbackData>(data: Data): CallbackQueryHandler<Data, UserData> | null {
     return this._handlers[data] ?? null;
   }
 
