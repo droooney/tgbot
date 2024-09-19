@@ -2,15 +2,14 @@ import { ImmediateMessageResponse, Markdown, TelegramBot } from '../../lib';
 import { CreateBot } from '../runExample';
 
 const commands = {
+  '/start': undefined,
   '/simple': 'Simple text response',
   '/markdown': 'Markdown',
 };
 
-type BotCommand = keyof typeof commands | '/start';
-
 const createBot: CreateBot = (token) => {
-  const bot = new TelegramBot<BotCommand>({
-    token: process.env.TOKEN ?? '',
+  const bot = new TelegramBot({
+    token,
     commands,
   });
 

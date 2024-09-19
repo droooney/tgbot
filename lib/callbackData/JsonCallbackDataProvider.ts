@@ -1,4 +1,4 @@
-import { CallbackQueryHandler } from '../TelegramBot';
+import { BaseCommand, CallbackQueryHandler } from '../TelegramBot';
 import { CallbackDataProvider } from './CallbackDataProvider';
 
 export type BaseJsonCallbackDataType = string;
@@ -8,9 +8,8 @@ export type BaseJsonCallbackData<Type extends BaseJsonCallbackDataType> = {
 };
 
 export type JsonCallbackDataByType<
-  Type extends BaseJsonCallbackDataType,
-  CallbackData extends BaseJsonCallbackData<Type>,
-  T extends Type,
+  CallbackData extends BaseJsonCallbackData<BaseJsonCallbackDataType>,
+  T extends CallbackData['type'],
 > = Extract<CallbackData, { type: T }>;
 
 export type JsonCallbackDataProviderOptions<
@@ -21,31 +20,39 @@ export type JsonCallbackDataProviderOptions<
 };
 
 export class JsonCallbackDataProvider<
-  CallbackDataType extends BaseJsonCallbackDataType,
-  CallbackData extends BaseJsonCallbackData<CallbackDataType>,
-  UserData,
-> extends CallbackDataProvider<CallbackData, UserData> {
+  CommandType extends BaseCommand = never,
+  CallbackData extends BaseJsonCallbackData<BaseJsonCallbackDataType> = never,
+  UserData = never,
+> extends CallbackDataProvider<CommandType, CallbackData, UserData> {
   private readonly _handlers: {
-    [Type in CallbackDataType]?: CallbackQueryHandler<
-      JsonCallbackDataByType<CallbackDataType, CallbackData, Type>,
-      UserData
+    [Type in CallbackData['type']]?: CallbackQueryHandler<
+      CommandType,
+      CallbackData,
+      UserData,
+      JsonCallbackDataByType<CallbackData, Type>
     >;
   } = {};
   private readonly _parseJson: (json: string) => CallbackData;
 
-  constructor(options: JsonCallbackDataProviderOptions<CallbackDataType, CallbackData>) {
+  constructor(options: JsonCallbackDataProviderOptions<CallbackData['type'], CallbackData>) {
     super();
 
     this._parseJson = options.parseJson ?? JSON.parse;
   }
 
-  getCallbackQueryHandler<CbData extends CallbackData>(data: CbData): CallbackQueryHandler<CbData, UserData> | null {
-    return (this._handlers[data.type] as CallbackQueryHandler<CbData, UserData> | undefined) ?? null;
-  }
+  getCallbackQueryHandler = <Data extends CallbackData>(
+    data: Data,
+  ): CallbackQueryHandler<CommandType, CallbackData, UserData, Data> | null => {
+    return (
+      (this._handlers[data.type as Data['type']] as
+        | CallbackQueryHandler<CommandType, CallbackData, UserData, Data>
+        | undefined) ?? null
+    );
+  };
 
-  handle<Type extends CallbackDataType>(
+  handle<Type extends CallbackData['type']>(
     type: Type,
-    handler: CallbackQueryHandler<JsonCallbackDataByType<CallbackDataType, CallbackData, Type>, UserData>,
+    handler: CallbackQueryHandler<CommandType, CallbackData, UserData, JsonCallbackDataByType<CallbackData, Type>>,
   ): this {
     for (const dataType of typeof type === 'string' ? [type] : type) {
       this._handlers[dataType] = handler;
@@ -54,7 +61,7 @@ export class JsonCallbackDataProvider<
     return this;
   }
 
-  parseCallbackData(dataString: string): CallbackData | null {
+  parseCallbackData = (dataString: string): CallbackData | null => {
     let data: CallbackData;
 
     try {
@@ -64,9 +71,9 @@ export class JsonCallbackDataProvider<
     }
 
     return data;
-  }
+  };
 
-  stringifyData(data: CallbackData): string {
+  stringifyData = (data: CallbackData): string => {
     return JSON.stringify(data);
-  }
+  };
 }

@@ -8,8 +8,9 @@ export type MemoryStringUserDataProviderOptions<UserData extends string> = {
 
 export class MemoryStringUserDataProvider<
   CommandType extends BaseCommand,
+  CallbackData,
   UserData extends string,
-> extends StringUserDataProvider<CommandType, UserData> {
+> extends StringUserDataProvider<CommandType, CallbackData, UserData> {
   private readonly _getDefaultValue: (userId: number) => MaybePromise<UserData>;
 
   constructor(options: MemoryStringUserDataProviderOptions<UserData>) {
@@ -20,7 +21,7 @@ export class MemoryStringUserDataProvider<
     this._getDefaultValue = typeof defaultValue === 'string' ? () => defaultValue : defaultValue;
   }
 
-  getOrCreateUserData(userId: number): MaybePromise<UserData> {
+  getOrCreateUserData = (userId: number): MaybePromise<UserData> => {
     return this._getDefaultValue(userId);
-  }
+  };
 }

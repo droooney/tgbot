@@ -20,7 +20,7 @@ export async function prepareInlineKeyboard<CommandType extends BaseCommand, Cal
 
   buttons.forEach((row, rowIndex) => {
     row.forEach((button, buttonIndex) => {
-      if (button.type === 'callback') {
+      if (button.type === 'callbackData') {
         callbackDataPromises.push(
           (async () => ({
             rowIndex,
@@ -103,7 +103,7 @@ export async function prepareInlineKeyboard<CommandType extends BaseCommand, Cal
 
           if (callbackDataString && callbackDataString.length > 64) {
             throw new TelegramBotError(TelegramBotErrorCode.LongCallbackData, {
-              message: `Callback data too long: (${JSON.stringify(callbackDataString)})`,
+              message: `Callback data is too long: (${JSON.stringify(callbackDataString)})`,
             });
           }
 

@@ -1,7 +1,9 @@
 import * as fs from 'node:fs';
 import path from 'node:path';
 
-import { ImmediateMessageResponse, TelegramBot } from '../../lib';
+import { z } from 'zod';
+
+import { ImmediateMessageResponse, JsonCallbackDataProvider, MultipleMessageResponse, TelegramBot } from '../../lib';
 import { CreateBot } from '../runExample';
 
 const commands = {
@@ -11,10 +13,27 @@ const commands = {
 type BotCommand = keyof typeof commands;
 
 const createBot: CreateBot = (token) => {
-  const bot = new TelegramBot<BotCommand>({
-    token: process.env.TOKEN ?? '',
-    commands,
+  const callbackData = z.object({
+    type: z.literal('deleteSet'),
+    id: z.string(),
   });
+
+  type CallbackData = z.TypeOf<typeof callbackData>;
+
+  const callbackDataProvider = new JsonCallbackDataProvider<BotCommand, CallbackData>({
+    parseJson: (json) => callbackData.parse(JSON.parse(json)),
+  });
+  const bot = new TelegramBot({
+    token,
+    commands,
+    callbackDataProvider,
+  });
+
+  const getTestSetName = async (id: string) => {
+    const info = await bot.api.getMe();
+
+    return `test_${id}_by_${info.username}`;
+  };
 
   bot.handleCommand('/create_sticker_set', async (ctx) => {
     const user = ctx.message.from;
@@ -23,11 +42,11 @@ const createBot: CreateBot = (token) => {
       return;
     }
 
-    const info = await bot.api.getMe();
+    const id = Math.random().toString().slice(2);
 
     await bot.api.createNewStickerSet({
       user_id: user.id,
-      name: `test_${Math.random().toString().slice(2)}_by_${info.username}`,
+      name: await getTestSetName(id),
       title: 'Test Sticker Set',
       stickers: [
         {
@@ -38,10 +57,37 @@ const createBot: CreateBot = (token) => {
       ],
     });
 
+    return new MultipleMessageResponse([
+      new ImmediateMessageResponse({
+        content: {
+          type: 'text',
+          text: 'Set created',
+        },
+        replyMarkup: [
+          [
+            {
+              type: 'callbackData',
+              text: 'Delete set',
+              callbackData: {
+                type: 'deleteSet',
+                id,
+              },
+            },
+          ],
+        ],
+      }),
+    ]);
+  });
+
+  callbackDataProvider.handle('deleteSet', async ({ data: { id } }) => {
+    await bot.api.deleteStickerSet({
+      name: await getTestSetName(id),
+    });
+
     return new ImmediateMessageResponse({
       content: {
         type: 'text',
-        text: 'Set created',
+        text: 'Set deleted',
       },
     });
   });

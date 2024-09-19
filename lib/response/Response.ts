@@ -1,7 +1,7 @@
 import { CallbackQuery, Message } from 'typescript-telegram-bot-api/dist/types';
 
 import { BaseCommand, TelegramBot } from '../TelegramBot';
-import { RequiredKeys } from '../types';
+import { MaybePromise, RequiredKeys } from '../types';
 
 export type RespondToCallbackQueryContext<CommandType extends BaseCommand, CallbackData, UserData> = {
   bot: TelegramBot<CommandType, CallbackData, UserData>;
@@ -13,15 +13,17 @@ export type RespondToMessageContext<CommandType extends BaseCommand, CallbackDat
   message: Message;
 };
 
-export type ResponseToMessage = RequiredKeys<Response, 'respondToMessage'>;
+export type ResponseToMessage<CommandType extends BaseCommand, CallbackData, UserData> = RequiredKeys<
+  Response<CommandType, CallbackData, UserData>,
+  'respondToMessage'
+>;
 
-export type ResponseToCallbackQuery = RequiredKeys<Response, 'respondToCallbackQuery'>;
+export type ResponseToCallbackQuery<CommandType extends BaseCommand, CallbackData, UserData> = RequiredKeys<
+  Response<CommandType, CallbackData, UserData>,
+  'respondToCallbackQuery'
+>;
 
-export class Response {
-  respondToMessage?<CommandType extends BaseCommand, CallbackData, UserData>(
-    ctx: RespondToMessageContext<CommandType, CallbackData, UserData>,
-  ): Promise<void>;
-  respondToCallbackQuery?<CommandType extends BaseCommand, CallbackData, UserData>(
-    ctx: RespondToCallbackQueryContext<CommandType, CallbackData, UserData>,
-  ): Promise<void>;
+export class Response<CommandType extends BaseCommand, CallbackData, UserData> {
+  respondToMessage?(ctx: RespondToMessageContext<CommandType, CallbackData, UserData>): MaybePromise<void>;
+  respondToCallbackQuery?(ctx: RespondToCallbackQueryContext<CommandType, CallbackData, UserData>): MaybePromise<void>;
 }

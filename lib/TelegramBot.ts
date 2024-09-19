@@ -15,9 +15,9 @@ export type MessageErrorResponseContext = {
   message: Message;
 };
 
-export type GetMessageErrorResponse = (
+export type GetMessageErrorResponse<CommandType extends BaseCommand, CallbackData, UserData> = (
   ctx: MessageErrorResponseContext,
-) => MaybePromise<ResponseToMessage | null | undefined | void>;
+) => MaybePromise<ResponseToMessage<CommandType, CallbackData, UserData> | null | undefined | void>;
 
 export type CallbackQueryErrorResponseContext = {
   err: unknown;
@@ -25,25 +25,29 @@ export type CallbackQueryErrorResponseContext = {
   query: CallbackQuery;
 };
 
-export type GetCallbackQueryErrorResponse = (
+export type GetCallbackQueryErrorResponse<CommandType extends BaseCommand, CallbackData, UserData> = (
   ctx: CallbackQueryErrorResponseContext,
-) => MaybePromise<ResponseToCallbackQuery | null | undefined | void>;
+) => MaybePromise<ResponseToCallbackQuery<CommandType, CallbackData, UserData> | null | undefined | void>;
 
 export type BotCommands<CommandType extends BaseCommand> = Partial<Record<CommandType, string>>;
 
 export type TelegramBotOptions<CommandType extends BaseCommand, CallbackData, UserData> = {
   token: string;
   commands?: BotCommands<CommandType>;
-  callbackDataProvider?: CallbackDataProvider<CallbackData, UserData>;
+  callbackDataProvider?: CallbackDataProvider<NoInfer<CommandType>, CallbackData, NoInfer<UserData>>;
   usernameWhitelist?: string[];
-  getMessageErrorResponse?: GetMessageErrorResponse;
-  getCallbackQueryErrorResponse?: GetCallbackQueryErrorResponse;
-} & (UserData extends undefined
+  getMessageErrorResponse?: GetMessageErrorResponse<NoInfer<CommandType>, NoInfer<CallbackData>, NoInfer<UserData>>;
+  getCallbackQueryErrorResponse?: GetCallbackQueryErrorResponse<
+    NoInfer<CommandType>,
+    NoInfer<CallbackData>,
+    NoInfer<UserData>
+  >;
+} & ([UserData] extends [never]
   ? {
       userDataProvider?: never;
     }
   : {
-      userDataProvider: UserDataProvider<CommandType, UserData>;
+      userDataProvider: UserDataProvider<NoInfer<CommandType>, NoInfer<CallbackData>, UserData>;
     });
 
 export type TextHandlerContext<CommandType extends BaseCommand, UserData> = {
@@ -52,9 +56,9 @@ export type TextHandlerContext<CommandType extends BaseCommand, UserData> = {
   commands: CommandType[];
 };
 
-export type TextHandler<CommandType extends BaseCommand, UserData> = (
-  ctx: TextHandlerContext<CommandType, UserData>,
-) => MaybePromise<ResponseToMessage | null | undefined | void>;
+export type TextHandler<CommandType extends BaseCommand, CallbackData, UserData, MessageUserData extends UserData> = (
+  ctx: TextHandlerContext<CommandType, MessageUserData>,
+) => MaybePromise<ResponseToMessage<CommandType, CallbackData, UserData> | null | undefined | void>;
 
 export type CallbackQueryHandlerContext<CallbackData, UserData> = {
   data: CallbackData;
@@ -62,9 +66,14 @@ export type CallbackQueryHandlerContext<CallbackData, UserData> = {
   userData: UserData;
 };
 
-export type CallbackQueryHandler<CallbackData, UserData> = (
-  ctx: CallbackQueryHandlerContext<CallbackData, UserData>,
-) => MaybePromise<ResponseToCallbackQuery | null | undefined | void>;
+export type CallbackQueryHandler<
+  CommandType extends BaseCommand,
+  CallbackData,
+  UserData,
+  QueryCallbackData extends CallbackData,
+> = (
+  ctx: CallbackQueryHandlerContext<QueryCallbackData, UserData>,
+) => MaybePromise<ResponseToCallbackQuery<CommandType, CallbackData, UserData> | null | undefined | void>;
 
 export type BaseCommand = `/${string}`;
 
@@ -79,16 +88,18 @@ export type TelegramBotEvents = {
 export class TelegramBot<
   CommandType extends BaseCommand = never,
   CallbackData = never,
-  UserData = undefined,
+  UserData = never,
 > extends EventEmitter<TelegramBotEvents> {
-  private readonly _commandHandlers: Partial<Record<CommandType, TextHandler<CommandType, UserData>>> = {};
-  private readonly _getMessageErrorResponse?: GetMessageErrorResponse;
-  private readonly _getCallbackQueryErrorResponse?: GetCallbackQueryErrorResponse;
+  private readonly _commandHandlers: Partial<
+    Record<CommandType, TextHandler<CommandType, CallbackData, UserData, UserData>>
+  > = {};
+  private readonly _getMessageErrorResponse?: GetMessageErrorResponse<CommandType, CallbackData, UserData>;
+  private readonly _getCallbackQueryErrorResponse?: GetCallbackQueryErrorResponse<CommandType, CallbackData, UserData>;
 
   readonly api: TelegramBotApi;
   readonly commands?: BotCommands<CommandType>;
-  readonly callbackDataProvider?: CallbackDataProvider<CallbackData, UserData>;
-  readonly userDataProvider?: UserDataProvider<CommandType, UserData>;
+  readonly callbackDataProvider?: CallbackDataProvider<CommandType, CallbackData, UserData>;
+  readonly userDataProvider?: UserDataProvider<CommandType, CallbackData, UserData>;
   readonly usernameWhitelist?: string[];
 
   constructor(options: TelegramBotOptions<CommandType, CallbackData, UserData>) {
@@ -113,14 +124,17 @@ export class TelegramBot<
     }
   }
 
-  async editMessage(message: Message, response: MessageResponse<CallbackData>): Promise<Message> {
-    return response.editMessage({
+  async editMessage(
+    message: Message,
+    response: MessageResponse<CommandType, CallbackData, UserData>,
+  ): Promise<Message> {
+    return response.edit({
       message,
       bot: this,
     });
   }
 
-  handleCommand(command: CommandType, handler: TextHandler<CommandType, UserData>): this {
+  handleCommand(command: CommandType, handler: TextHandler<CommandType, CallbackData, UserData, UserData>): this {
     this._commandHandlers[command] = handler;
 
     return this;
@@ -132,10 +146,10 @@ export class TelegramBot<
 
   async sendMessage(
     chatId: number,
-    response: MessageResponse<CallbackData>,
+    response: MessageResponse<CommandType, CallbackData, UserData>,
     options?: SendMessageOptions,
   ): Promise<Message> {
-    return response.sendMessage({
+    return response.send({
       chatId,
       bot: this,
       replyToMessageId: options?.replyToMessageId,
@@ -153,14 +167,14 @@ export class TelegramBot<
 
         const userData = user && (await this.userDataProvider?.getOrCreateUserData(user.id));
 
-        let handler: TextHandler<CommandType, UserData> | null | undefined;
+        let handler: TextHandler<CommandType, CallbackData, UserData, UserData> | null | undefined;
 
         if (text && text in this._commandHandlers) {
           handler = this._commandHandlers[text as CommandType];
         }
 
         if (userData && !handler) {
-          handler = this.userDataProvider?.getUserDataHandler(userData);
+          handler = this.userDataProvider?.getUserDataHandler<UserData>(userData);
         }
 
         if (!handler) {
@@ -200,11 +214,17 @@ export class TelegramBot<
     });
 
     this.api.on('callback_query', async (query) => {
+      const answerQuery = async () => {
+        await this.api.answerCallbackQuery({
+          callback_query_id: query.id,
+        });
+      };
+
       try {
         const { from: user, message, data } = query;
 
         if (!message || !this.isUserAllowed(user)) {
-          return;
+          return await answerQuery();
         }
 
         // TODO: handle no data for Game
@@ -220,7 +240,7 @@ export class TelegramBot<
         const callbackData = await this.callbackDataProvider.parseCallbackData(data);
 
         if (callbackData == null) {
-          return;
+          return await answerQuery();
         }
 
         const handler = this.callbackDataProvider.getCallbackQueryHandler(callbackData);
@@ -240,12 +260,14 @@ export class TelegramBot<
             bot: this,
             query,
           });
+        } else {
+          await answerQuery();
         }
       } catch (err) {
         this._emitResponseError(err);
 
         if (!query.message) {
-          return;
+          return await answerQuery();
         }
 
         try {
@@ -261,9 +283,7 @@ export class TelegramBot<
               query,
             });
           } else {
-            await this.api.answerCallbackQuery({
-              callback_query_id: query.id,
-            });
+            await answerQuery();
           }
         } catch (err) {
           this._emitResponseError(err);

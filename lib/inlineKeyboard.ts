@@ -12,7 +12,7 @@ export type BaseInlineKeyboardButton = {
 };
 
 export type CallbackInlineKeyboardButton<CallbackData> = BaseInlineKeyboardButton & {
-  type: 'callback';
+  type: 'callbackData';
   callbackData: CallbackData;
 };
 

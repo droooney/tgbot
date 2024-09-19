@@ -18,7 +18,11 @@ export type ImmediateMessageResponseOptions<CallbackData> = MessageResponseOptio
   content: MessageResponseContent;
 };
 
-export class ImmediateMessageResponse<CallbackData> extends MessageResponse<CallbackData> {
+export class ImmediateMessageResponse<CommandType extends BaseCommand, CallbackData, UserData> extends MessageResponse<
+  CommandType,
+  CallbackData,
+  UserData
+> {
   readonly content: MessageResponseContent;
 
   constructor(options: ImmediateMessageResponseOptions<CallbackData>) {
@@ -27,13 +31,11 @@ export class ImmediateMessageResponse<CallbackData> extends MessageResponse<Call
     this.content = options.content;
   }
 
-  async editMessage<CommandType extends BaseCommand, BotCallbackData, UserData>(
-    ctx: CallbackData extends BotCallbackData ? EditMessageContext<CommandType, BotCallbackData, UserData> : never,
-  ): Promise<Message> {
+  async edit(ctx: EditMessageContext<CommandType, CallbackData, UserData>): Promise<Message> {
     const editBasicOptions = {
       chat_id: ctx.message.chat.id,
       message_id: ctx.message.message_id,
-      reply_markup: await this.getReplyMarkup(ctx.bot as never),
+      reply_markup: await this.getReplyMarkup(ctx.bot),
     };
     const { content } = this;
 
@@ -67,17 +69,15 @@ export class ImmediateMessageResponse<CallbackData> extends MessageResponse<Call
     throw new TelegramBotError(TelegramBotErrorCode.UnsupportedContent);
   }
 
-  async sendMessage<CommandType extends BaseCommand, BotCallbackData, UserData>(
-    ctx: CallbackData extends BotCallbackData ? SendMessageContext<CommandType, BotCallbackData, UserData> : never,
-  ): Promise<Message> {
+  async send(ctx: SendMessageContext<CommandType, CallbackData, UserData>): Promise<Message> {
     const sendBasicOptions = {
       chat_id: ctx.chatId,
       message_thread_id: ctx.messageThreadId,
-      disable_notification: ctx.disableNotification,
+      disable_notification: ctx.disableNotification ?? this.disableNotification,
       reply_to_message_id: ctx.replyToMessageId,
-      reply_markup: await this.getReplyMarkup(ctx.bot as never),
-      protect_content: ctx.protectContent,
-      allow_sending_without_reply: ctx.allowSendingWithoutReply,
+      reply_markup: await this.getReplyMarkup(ctx.bot),
+      protect_content: ctx.protectContent ?? this.protectContent,
+      allow_sending_without_reply: ctx.allowSendingWithoutReply ?? this.allowSendingWithoutReply,
     };
     const { content } = this;
 

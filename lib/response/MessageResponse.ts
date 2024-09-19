@@ -3,7 +3,7 @@ import { InlineKeyboardMarkup, Message } from 'typescript-telegram-bot-api/dist/
 import { BaseCommand, TelegramBot } from '../TelegramBot';
 import { TelegramBotError, TelegramBotErrorCode } from '../TelegramBotError';
 import { InlineKeyboard } from '../inlineKeyboard';
-import { prepareInlineKeyboard } from '../utils/keyboard';
+import { prepareInlineKeyboard } from '../utils/inlineKeyboard';
 import { RespondToCallbackQueryContext, RespondToMessageContext, Response } from './Response';
 
 export type EditMessageContext<CommandType extends BaseCommand, CallbackData, UserData> = {
@@ -30,13 +30,17 @@ export type MessageResponseOptions<CallbackData> = {
   allowSendingWithoutReply?: boolean;
 };
 
-export abstract class MessageResponse<CallbackData> extends Response {
+export abstract class MessageResponse<CommandType extends BaseCommand, CallbackData, UserData> extends Response<
+  CommandType,
+  CallbackData,
+  UserData
+> {
   readonly disableNotification?: boolean;
   readonly replyMarkup?: ReplyMarkup<CallbackData>;
   readonly protectContent?: boolean;
   readonly allowSendingWithoutReply?: boolean;
 
-  constructor(options?: MessageResponseOptions<CallbackData>) {
+  protected constructor(options?: MessageResponseOptions<CallbackData>) {
     super();
 
     this.disableNotification = options?.disableNotification;
@@ -45,22 +49,16 @@ export abstract class MessageResponse<CallbackData> extends Response {
     this.allowSendingWithoutReply = options?.allowSendingWithoutReply;
   }
 
-  abstract editMessage<CommandType extends BaseCommand, CallbackData, UserData>(
-    ctx: EditMessageContext<CommandType, CallbackData, UserData>,
-  ): Promise<Message>;
-  abstract sendMessage<CommandType extends BaseCommand, CallbackData, UserData>(
-    ctx: SendMessageContext<CommandType, CallbackData, UserData>,
-  ): Promise<Message>;
+  abstract edit(ctx: EditMessageContext<CommandType, CallbackData, UserData>): Promise<Message>;
+  abstract send(ctx: SendMessageContext<CommandType, CallbackData, UserData>): Promise<Message>;
 
-  async getReplyMarkup<CommandType extends BaseCommand, BotCallbackData, UserData>(
-    bot: CallbackData extends BotCallbackData ? TelegramBot<CommandType, BotCallbackData, UserData> : never,
+  async getReplyMarkup(
+    bot: TelegramBot<CommandType, CallbackData, UserData>,
   ): Promise<InlineKeyboardMarkup | undefined> {
-    return this.replyMarkup && (await prepareInlineKeyboard(bot, this.replyMarkup as InlineKeyboard<BotCallbackData>));
+    return this.replyMarkup && (await prepareInlineKeyboard(bot, this.replyMarkup));
   }
 
-  async respondToCallbackQuery<CommandType extends BaseCommand, CallbackData, UserData>(
-    ctx: RespondToCallbackQueryContext<CommandType, CallbackData, UserData>,
-  ): Promise<void> {
+  async respondToCallbackQuery(ctx: RespondToCallbackQueryContext<CommandType, CallbackData, UserData>): Promise<void> {
     const { id: queryId, message } = ctx.query;
 
     if (!message) {
@@ -68,7 +66,7 @@ export abstract class MessageResponse<CallbackData> extends Response {
     }
 
     try {
-      await this.editMessage({
+      await this.edit({
         message,
         bot: ctx.bot,
       });
@@ -83,17 +81,12 @@ export abstract class MessageResponse<CallbackData> extends Response {
     }
   }
 
-  async respondToMessage<CommandType extends BaseCommand, CallbackData, UserData>(
-    ctx: RespondToMessageContext<CommandType, CallbackData, UserData>,
-  ): Promise<void> {
-    await this.sendMessage({
+  async respondToMessage(ctx: RespondToMessageContext<CommandType, CallbackData, UserData>): Promise<void> {
+    await this.send({
       bot: ctx.bot,
       chatId: ctx.message.chat.id,
       messageThreadId: ctx.message.message_thread_id,
       replyToMessageId: ctx.message.message_id,
-      disableNotification: this.disableNotification,
-      protectContent: this.protectContent,
-      allowSendingWithoutReply: this.allowSendingWithoutReply,
     });
   }
 }
