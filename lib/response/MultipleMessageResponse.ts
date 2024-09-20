@@ -15,7 +15,9 @@ export class MultipleMessageResponse<CommandType extends BaseCommand, CallbackDa
     this._responses = responses;
   }
 
-  async respondToCallbackQuery(ctx: RespondToCallbackQueryContext<CommandType, CallbackData, UserData>): Promise<void> {
+  respondToCallbackQuery = async (
+    ctx: RespondToCallbackQueryContext<CommandType, CallbackData, UserData>,
+  ): Promise<void> => {
     const { message } = ctx.query;
 
     if (!message) {
@@ -33,9 +35,9 @@ export class MultipleMessageResponse<CommandType extends BaseCommand, CallbackDa
         });
       }
     }
-  }
+  };
 
-  async respondToMessage(ctx: RespondToMessageContext<CommandType, CallbackData, UserData>): Promise<void> {
+  respondToMessage = async (ctx: RespondToMessageContext<CommandType, CallbackData, UserData>): Promise<void> => {
     for (const [index, response] of this._responses.entries()) {
       if (index === 0) {
         await response.respondToMessage(ctx);
@@ -47,5 +49,5 @@ export class MultipleMessageResponse<CommandType extends BaseCommand, CallbackDa
         });
       }
     }
-  }
+  };
 }

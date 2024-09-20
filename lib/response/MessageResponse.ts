@@ -52,13 +52,15 @@ export abstract class MessageResponse<CommandType extends BaseCommand, CallbackD
   abstract edit(ctx: EditMessageContext<CommandType, CallbackData, UserData>): Promise<Message>;
   abstract send(ctx: SendMessageContext<CommandType, CallbackData, UserData>): Promise<Message>;
 
-  async getReplyMarkup(
+  getReplyMarkup = async (
     bot: TelegramBot<CommandType, CallbackData, UserData>,
-  ): Promise<InlineKeyboardMarkup | undefined> {
-    return this.replyMarkup && (await prepareInlineKeyboard(bot, this.replyMarkup));
-  }
+  ): Promise<InlineKeyboardMarkup | undefined> => {
+    return this.replyMarkup && (await prepareInlineKeyboard(bot.callbackDataProvider, this.replyMarkup));
+  };
 
-  async respondToCallbackQuery(ctx: RespondToCallbackQueryContext<CommandType, CallbackData, UserData>): Promise<void> {
+  respondToCallbackQuery = async (
+    ctx: RespondToCallbackQueryContext<CommandType, CallbackData, UserData>,
+  ): Promise<void> => {
     const { id: queryId, message } = ctx.query;
 
     if (!message) {
@@ -79,14 +81,14 @@ export abstract class MessageResponse<CommandType extends BaseCommand, CallbackD
         throw err;
       }
     }
-  }
+  };
 
-  async respondToMessage(ctx: RespondToMessageContext<CommandType, CallbackData, UserData>): Promise<void> {
+  respondToMessage = async (ctx: RespondToMessageContext<CommandType, CallbackData, UserData>): Promise<void> => {
     await this.send({
       bot: ctx.bot,
       chatId: ctx.message.chat.id,
       messageThreadId: ctx.message.message_thread_id,
       replyToMessageId: ctx.message.message_id,
     });
-  }
+  };
 }

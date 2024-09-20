@@ -1,4 +1,4 @@
-import { BaseCommand, TextHandler } from '../TelegramBot';
+import { BaseCommand, MessageHandler } from '../TelegramBot';
 import { UserDataProvider } from './UserDataProvider';
 
 export abstract class StringUserDataProvider<
@@ -7,18 +7,18 @@ export abstract class StringUserDataProvider<
   UserData extends string,
 > extends UserDataProvider<CommandType, CallbackData, UserData> {
   private readonly _handlers: {
-    [Data in UserData]?: TextHandler<CommandType, CallbackData, UserData, Data>;
+    [Data in UserData]?: MessageHandler<CommandType, CallbackData, UserData, Data>;
   } = {};
 
   getUserDataHandler = <Data extends UserData>(
     userData: Data,
-  ): TextHandler<CommandType, CallbackData, UserData, Data> | null => {
+  ): MessageHandler<CommandType, CallbackData, UserData, Data> | null => {
     return this._handlers[userData] ?? null;
   };
 
   handle<Data extends UserData>(
     data: Data | Data[],
-    handler: TextHandler<CommandType, CallbackData, UserData, Data>,
+    handler: MessageHandler<CommandType, CallbackData, UserData, Data>,
   ): this {
     for (const dataString of typeof data === 'string' ? [data] : data) {
       this._handlers[dataString] = handler;

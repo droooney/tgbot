@@ -8,7 +8,7 @@ const commands = {
 };
 
 const createBot: CreateBot<keyof typeof commands> = (token) => {
-  const bot = new TelegramBot({
+  const bot = new TelegramBot<keyof typeof commands, never, never>({
     token,
     commands,
   });

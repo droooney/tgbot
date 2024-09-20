@@ -1,14 +1,15 @@
 import { InlineKeyboardMarkup } from 'typescript-telegram-bot-api/dist/types';
 
-import { BaseCommand, TelegramBot } from '../TelegramBot';
+import { BaseCommand } from '../TelegramBot';
 import { TelegramBotError, TelegramBotErrorCode } from '../TelegramBotError';
+import { CallbackDataProvider } from '../callbackData';
 import { InlineKeyboard } from '../inlineKeyboard';
 import { isTruthy } from './is';
 
 const BUTTON_TEXT_LIMIT = 120;
 
 export async function prepareInlineKeyboard<CommandType extends BaseCommand, CallbackData, UserData>(
-  bot: TelegramBot<CommandType, CallbackData, UserData>,
+  callbackDataProvider: CallbackDataProvider<CommandType, CallbackData, UserData> | undefined,
   keyboard: InlineKeyboard<CallbackData>,
 ): Promise<InlineKeyboardMarkup> {
   const callbackDataPromises: Promise<{
@@ -25,7 +26,7 @@ export async function prepareInlineKeyboard<CommandType extends BaseCommand, Cal
           (async () => ({
             rowIndex,
             buttonIndex,
-            callbackData: await bot.callbackDataProvider?.stringifyData(button.callbackData),
+            callbackData: await callbackDataProvider?.stringifyData(button.callbackData),
           }))(),
         );
       }

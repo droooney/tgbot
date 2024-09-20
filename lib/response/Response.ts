@@ -24,6 +24,8 @@ export type ResponseToCallbackQuery<CommandType extends BaseCommand, CallbackDat
 >;
 
 export class Response<CommandType extends BaseCommand, CallbackData, UserData> {
-  respondToMessage?(ctx: RespondToMessageContext<CommandType, CallbackData, UserData>): MaybePromise<void>;
-  respondToCallbackQuery?(ctx: RespondToCallbackQueryContext<CommandType, CallbackData, UserData>): MaybePromise<void>;
+  respondToMessage?: (ctx: RespondToMessageContext<CommandType, CallbackData, UserData>) => MaybePromise<void>;
+  respondToCallbackQuery?: (
+    ctx: RespondToCallbackQueryContext<CommandType, CallbackData, UserData>,
+  ) => MaybePromise<void>;
 }

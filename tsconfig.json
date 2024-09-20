@@ -9,6 +9,7 @@
     "moduleResolution": "NodeNext",
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "noEmit": true,
     "baseUrl": "."
   },
   "include": ["**/*.ts"],

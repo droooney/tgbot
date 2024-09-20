@@ -5,7 +5,7 @@ import { BotCommand, CallbackQuery, Message, User } from 'typescript-telegram-bo
 
 import { TelegramBotError, TelegramBotErrorCode } from './TelegramBotError';
 import { CallbackDataProvider } from './callbackData';
-import { MessageResponse, ResponseToCallbackQuery, ResponseToMessage } from './response';
+import { ResponseToCallbackQuery, ResponseToMessage } from './response';
 import { MaybePromise } from './types';
 import { UserDataProvider } from './userData';
 import { prepareErrorForLogging } from './utils/error';
@@ -34,34 +34,35 @@ export type BotCommands<CommandType extends BaseCommand> = Partial<Record<Comman
 export type TelegramBotOptions<CommandType extends BaseCommand, CallbackData, UserData> = {
   token: string;
   commands?: BotCommands<CommandType>;
-  callbackDataProvider?: CallbackDataProvider<NoInfer<CommandType>, CallbackData, NoInfer<UserData>>;
+  callbackDataProvider?: CallbackDataProvider<CommandType, CallbackData, UserData>;
   usernameWhitelist?: string[];
-  getMessageErrorResponse?: GetMessageErrorResponse<NoInfer<CommandType>, NoInfer<CallbackData>, NoInfer<UserData>>;
-  getCallbackQueryErrorResponse?: GetCallbackQueryErrorResponse<
-    NoInfer<CommandType>,
-    NoInfer<CallbackData>,
-    NoInfer<UserData>
-  >;
+  getMessageErrorResponse?: GetMessageErrorResponse<CommandType, CallbackData, UserData>;
+  getCallbackQueryErrorResponse?: GetCallbackQueryErrorResponse<CommandType, CallbackData, UserData>;
 } & ([UserData] extends [never]
   ? {
       userDataProvider?: never;
     }
   : {
-      userDataProvider: UserDataProvider<NoInfer<CommandType>, NoInfer<CallbackData>, UserData>;
+      userDataProvider: UserDataProvider<CommandType, CallbackData, UserData>;
     });
 
-export type TextHandlerContext<CommandType extends BaseCommand, UserData> = {
+export type MessageHandlerContext<CommandType extends BaseCommand, UserData> = {
   message: Message;
   userData?: UserData;
   commands: CommandType[];
 };
 
-export type TextHandler<CommandType extends BaseCommand, CallbackData, UserData, MessageUserData extends UserData> = (
-  ctx: TextHandlerContext<CommandType, MessageUserData>,
+export type MessageHandler<
+  CommandType extends BaseCommand,
+  CallbackData,
+  UserData,
+  MessageUserData extends UserData,
+> = (
+  ctx: MessageHandlerContext<CommandType, MessageUserData>,
 ) => MaybePromise<ResponseToMessage<CommandType, CallbackData, UserData> | null | undefined | void>;
 
-export type CallbackQueryHandlerContext<CallbackData, UserData> = {
-  data: CallbackData;
+export type CallbackQueryHandlerContext<UserData, QueryCallbackData> = {
+  data: QueryCallbackData;
   message: Message;
   userData: UserData;
 };
@@ -72,7 +73,7 @@ export type CallbackQueryHandler<
   UserData,
   QueryCallbackData extends CallbackData,
 > = (
-  ctx: CallbackQueryHandlerContext<QueryCallbackData, UserData>,
+  ctx: CallbackQueryHandlerContext<UserData, QueryCallbackData>,
 ) => MaybePromise<ResponseToCallbackQuery<CommandType, CallbackData, UserData> | null | undefined | void>;
 
 export type BaseCommand = `/${string}`;
@@ -86,12 +87,12 @@ export type TelegramBotEvents = {
 };
 
 export class TelegramBot<
-  CommandType extends BaseCommand = never,
-  CallbackData = never,
-  UserData = never,
+  CommandType extends BaseCommand,
+  CallbackData,
+  UserData,
 > extends EventEmitter<TelegramBotEvents> {
   private readonly _commandHandlers: Partial<
-    Record<CommandType, TextHandler<CommandType, CallbackData, UserData, UserData>>
+    Record<CommandType, MessageHandler<CommandType, CallbackData, UserData, UserData>>
   > = {};
   private readonly _getMessageErrorResponse?: GetMessageErrorResponse<CommandType, CallbackData, UserData>;
   private readonly _getCallbackQueryErrorResponse?: GetCallbackQueryErrorResponse<CommandType, CallbackData, UserData>;
@@ -124,17 +125,7 @@ export class TelegramBot<
     }
   }
 
-  async editMessage(
-    message: Message,
-    response: MessageResponse<CommandType, CallbackData, UserData>,
-  ): Promise<Message> {
-    return response.edit({
-      message,
-      bot: this,
-    });
-  }
-
-  handleCommand(command: CommandType, handler: TextHandler<CommandType, CallbackData, UserData, UserData>): this {
+  handleCommand(command: CommandType, handler: MessageHandler<CommandType, CallbackData, UserData, UserData>): this {
     this._commandHandlers[command] = handler;
 
     return this;
@@ -142,18 +133,6 @@ export class TelegramBot<
 
   isUserAllowed(user: User): boolean {
     return Boolean(user.username && (!this.usernameWhitelist || this.usernameWhitelist.includes(user.username)));
-  }
-
-  async sendMessage(
-    chatId: number,
-    response: MessageResponse<CommandType, CallbackData, UserData>,
-    options?: SendMessageOptions,
-  ): Promise<Message> {
-    return response.send({
-      chatId,
-      bot: this,
-      replyToMessageId: options?.replyToMessageId,
-    });
   }
 
   async start(): Promise<void> {
@@ -167,7 +146,7 @@ export class TelegramBot<
 
         const userData = user && (await this.userDataProvider?.getOrCreateUserData(user.id));
 
-        let handler: TextHandler<CommandType, CallbackData, UserData, UserData> | null | undefined;
+        let handler: MessageHandler<CommandType, CallbackData, UserData, UserData> | null | undefined;
 
         if (text && text in this._commandHandlers) {
           handler = this._commandHandlers[text as CommandType];
@@ -236,8 +215,10 @@ export class TelegramBot<
           return;
         }
 
-        const userData = (await this.userDataProvider?.getOrCreateUserData(user.id)) as UserData;
-        const callbackData = await this.callbackDataProvider.parseCallbackData(data);
+        const [userData, callbackData] = await Promise.all([
+          this.userDataProvider?.getOrCreateUserData(user.id),
+          this.callbackDataProvider.parseCallbackData(data),
+        ]);
 
         if (callbackData == null) {
           return await answerQuery();
@@ -252,7 +233,7 @@ export class TelegramBot<
         const response = await handler({
           data: callbackData,
           message,
-          userData,
+          userData: userData as UserData,
         });
 
         if (response) {
