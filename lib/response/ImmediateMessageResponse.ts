@@ -1,4 +1,4 @@
-import { LinkPreviewOptions, Message, ParseMode } from 'typescript-telegram-bot-api/dist/types';
+import { InputFile, LinkPreviewOptions, Message, ParseMode } from 'typescript-telegram-bot-api/dist/types';
 
 import { Markdown } from '../Markdown';
 import { BaseCommand } from '../TelegramBot';
@@ -12,7 +12,12 @@ export type MessageResponseTextContent = {
   linkPreviewOptions?: LinkPreviewOptions;
 };
 
-export type MessageResponseContent = MessageResponseTextContent;
+export type MessageResponseStickerContent = {
+  type: 'sticker';
+  sticker: InputFile | string;
+};
+
+export type MessageResponseContent = MessageResponseTextContent | MessageResponseStickerContent;
 
 export type ImmediateMessageResponseOptions<CallbackData> = MessageResponseOptions<CallbackData> & {
   content: MessageResponseContent;
@@ -72,6 +77,7 @@ export class ImmediateMessageResponse<CommandType extends BaseCommand, CallbackD
   async send(ctx: SendMessageContext<CommandType, CallbackData, UserData>): Promise<Message> {
     const sendBasicOptions = {
       chat_id: ctx.chatId,
+      business_connection_id: ctx.businessConnectionId,
       message_thread_id: ctx.messageThreadId,
       disable_notification: ctx.disableNotification ?? this.disableNotification,
       reply_to_message_id: ctx.replyToMessageId,
@@ -87,6 +93,15 @@ export class ImmediateMessageResponse<CommandType extends BaseCommand, CallbackD
         text: content.text.toString(),
         parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
         link_preview_options: content.linkPreviewOptions,
+      });
+    }
+
+    if (content.type === 'sticker') {
+      return ctx.bot.api.sendSticker({
+        ...sendBasicOptions,
+        // FIXME: remove when typings are fixed
+        message_thread_id: sendBasicOptions.message_thread_id as any,
+        sticker: content.sticker,
       });
     }
 

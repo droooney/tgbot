@@ -1,10 +1,11 @@
 import { LoginUrl, WebAppInfo } from 'typescript-telegram-bot-api/dist/types';
 
 export type InlineKeyboard<CallbackData> = (
-  | (InlineKeyboardButton<CallbackData> | null | undefined | false)[]
+  | (InlineKeyboardButton<CallbackData> | null | undefined | false | '')[]
   | null
   | undefined
   | false
+  | ''
 )[];
 
 export type BaseInlineKeyboardButton = {

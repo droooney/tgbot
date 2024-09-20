@@ -29,7 +29,7 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
     callbackDataProvider,
   });
 
-  const getTestSetName = async (id: string) => {
+  const getTestSetName = async (id: string): Promise<string> => {
     const info = await bot.api.getMe();
 
     return `test_${id}_by_${info.username}`;
@@ -43,10 +43,11 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
     }
 
     const id = Math.random().toString().slice(2);
+    const name = await getTestSetName(id);
 
     await bot.api.createNewStickerSet({
       user_id: user.id,
-      name: await getTestSetName(id),
+      name,
       title: 'Test Sticker Set',
       stickers: [
         {
@@ -56,6 +57,12 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
         },
       ],
     });
+
+    const stickerSet = await bot.api.getStickerSet({
+      name,
+    });
+
+    const sticker = stickerSet.stickers.at(0)?.file_id;
 
     return new MultipleMessageResponse([
       new ImmediateMessageResponse({
@@ -76,6 +83,13 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
           ],
         ],
       }),
+      sticker &&
+        new ImmediateMessageResponse({
+          content: {
+            type: 'sticker',
+            sticker,
+          },
+        }),
     ]);
   });
 

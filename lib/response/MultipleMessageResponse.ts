@@ -1,4 +1,5 @@
 import { BaseCommand } from '../TelegramBot';
+import { isTruthy } from '../utils/is';
 import { MessageResponse } from './MessageResponse';
 import { RespondToCallbackQueryContext, RespondToMessageContext, Response } from './Response';
 
@@ -9,10 +10,10 @@ export class MultipleMessageResponse<CommandType extends BaseCommand, CallbackDa
 > {
   private readonly _responses: MessageResponse<CommandType, CallbackData, UserData>[];
 
-  constructor(responses: MessageResponse<CommandType, CallbackData, UserData>[]) {
+  constructor(responses: (MessageResponse<CommandType, CallbackData, UserData> | null | undefined | false | '')[]) {
     super();
 
-    this._responses = responses;
+    this._responses = responses.filter(isTruthy);
   }
 
   respondToCallbackQuery = async (

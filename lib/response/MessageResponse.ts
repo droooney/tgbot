@@ -14,6 +14,7 @@ export type EditMessageContext<CommandType extends BaseCommand, CallbackData, Us
 export type SendMessageContext<CommandType extends BaseCommand, CallbackData, UserData> = {
   bot: TelegramBot<CommandType, CallbackData, UserData>;
   chatId: number;
+  businessConnectionId?: string;
   messageThreadId?: number;
   replyToMessageId?: number;
   disableNotification?: boolean;
