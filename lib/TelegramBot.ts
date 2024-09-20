@@ -5,7 +5,7 @@ import { BotCommand, CallbackQuery, Message, User } from 'typescript-telegram-bo
 
 import { TelegramBotError, TelegramBotErrorCode } from './TelegramBotError';
 import { CallbackDataProvider } from './callbackData';
-import { ResponseToCallbackQuery, ResponseToMessage } from './response';
+import { MessageResponse, ResponseToCallbackQuery, ResponseToMessage } from './response';
 import { MaybePromise } from './types';
 import { UserDataProvider } from './userData';
 import { prepareErrorForLogging } from './utils/error';
@@ -125,6 +125,16 @@ export class TelegramBot<
     }
   }
 
+  async editMessage(
+    message: Message,
+    response: MessageResponse<CommandType, CallbackData, UserData>,
+  ): Promise<Message> {
+    return response.edit({
+      message,
+      bot: this,
+    });
+  }
+
   handleCommand(command: CommandType, handler: MessageHandler<CommandType, CallbackData, UserData, UserData>): this {
     this._commandHandlers[command] = handler;
 
@@ -133,6 +143,18 @@ export class TelegramBot<
 
   isUserAllowed(user: User): boolean {
     return Boolean(user.username && (!this.usernameWhitelist || this.usernameWhitelist.includes(user.username)));
+  }
+
+  async sendMessage(
+    chatId: number,
+    response: MessageResponse<CommandType, CallbackData, UserData>,
+    options?: SendMessageOptions,
+  ): Promise<Message> {
+    return response.send({
+      chatId,
+      bot: this,
+      replyToMessageId: options?.replyToMessageId,
+    });
   }
 
   async start(): Promise<void> {
