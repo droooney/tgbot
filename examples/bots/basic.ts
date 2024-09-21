@@ -16,6 +16,7 @@ const commands = {
   '/simple': 'Simple text response',
   '/markdown': 'Markdown',
   '/photo': 'Photo',
+  '/document': 'Document',
   '/sticker': 'Sticker',
 };
 
@@ -27,6 +28,12 @@ const callbackData = z.union([
   }),
   z.object({
     type: z.literal('editPhoto'),
+  }),
+  z.object({
+    type: z.literal('editDocument'),
+  }),
+  z.object({
+    type: z.literal('editDocumentWithPhoto'),
   }),
 ]);
 
@@ -165,6 +172,36 @@ blockquote row 9`,
     });
   });
 
+  bot.handleCommand('/document', async () => {
+    return new ImmediateMessageResponse({
+      content: {
+        type: 'document',
+        document: fs.createReadStream(path.resolve('./examples/assets/file1.txt')),
+        text: Markdown.create`caption with ${Markdown.bold('bold')} text`,
+      },
+      replyMarkup: [
+        [
+          {
+            type: 'callbackData',
+            text: 'Edit document',
+            callbackData: {
+              type: 'editDocument',
+            },
+          },
+        ],
+        [
+          {
+            type: 'callbackData',
+            text: 'Edit document with photo',
+            callbackData: {
+              type: 'editDocumentWithPhoto',
+            },
+          },
+        ],
+      ],
+    });
+  });
+
   bot.handleCommand('/sticker', async () => {
     return new ImmediateMessageResponse({
       content: {
@@ -184,6 +221,26 @@ blockquote row 9`,
   });
 
   callbackDataProvider.handle('editPhoto', async () => {
+    return new ImmediateMessageResponse({
+      content: {
+        type: 'photo',
+        photo: fs.createReadStream(path.resolve('./examples/assets/house.png')),
+        text: Markdown.create`edited caption with ${Markdown.bold('bold')} text`,
+      },
+    });
+  });
+
+  callbackDataProvider.handle('editDocument', async () => {
+    return new ImmediateMessageResponse({
+      content: {
+        type: 'document',
+        document: fs.createReadStream(path.resolve('./examples/assets/file2.txt')),
+        text: Markdown.create`edited caption with ${Markdown.bold('bold')} text`,
+      },
+    });
+  });
+
+  callbackDataProvider.handle('editDocumentWithPhoto', async () => {
     return new ImmediateMessageResponse({
       content: {
         type: 'photo',

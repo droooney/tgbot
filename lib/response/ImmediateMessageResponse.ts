@@ -21,6 +21,15 @@ export type MessageResponsePhotoContent = {
   hasSpoiler?: boolean;
 };
 
+export type MessageResponseDocumentContent = {
+  type: 'document';
+  document: InputFile | string;
+  thumbnail?: InputFile | string;
+  text?: string | Markdown;
+  parseMode?: ParseMode;
+  disableContentTypeDetection?: boolean;
+};
+
 export type MessageResponseStickerContent = {
   type: 'sticker';
   sticker: InputFile | string;
@@ -29,6 +38,7 @@ export type MessageResponseStickerContent = {
 export type MessageResponseContent =
   | MessageResponseTextContent
   | MessageResponsePhotoContent
+  | MessageResponseDocumentContent
   | MessageResponseStickerContent;
 
 export type ImmediateMessageResponseOptions<CallbackData> = MessageResponseOptions<CallbackData> & {
@@ -79,6 +89,18 @@ export class ImmediateMessageResponse<
             has_spoiler: content.hasSpoiler,
           },
         });
+      } else if (content.type === 'document') {
+        editedMessage = await ctx.bot.api.editMessageMedia({
+          ...editBasicOptions,
+          media: {
+            type: 'document',
+            media: content.document,
+            thumbnail: content.thumbnail,
+            caption: content.text?.toString(),
+            parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
+            disable_content_type_detection: content.disableContentTypeDetection,
+          },
+        });
       }
     } catch (err) {
       if (!(err instanceof Error) || !/message is not modified/.test(err.message)) {
@@ -126,6 +148,17 @@ export class ImmediateMessageResponse<
         has_spoiler: content.hasSpoiler,
         // FIXME: remove when typings are fixed
       }) as Promise<Message>;
+    }
+
+    if (content.type === 'document') {
+      return ctx.bot.api.sendDocument({
+        ...sendBasicOptions,
+        document: content.document,
+        thumbnail: content.thumbnail,
+        caption: content.text?.toString(),
+        parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
+        disable_content_type_detection: content.disableContentTypeDetection,
+      });
     }
 
     if (content.type === 'sticker') {

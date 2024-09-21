@@ -56,6 +56,7 @@ export async function prepareInlineKeyboard<CommandType extends BaseCommand, Cal
           if (button.type === 'webApp') {
             return {
               text: buttonText,
+              // FIXME: remove when typings are fixed
               web_app: button.appInfo as never,
             };
           }
