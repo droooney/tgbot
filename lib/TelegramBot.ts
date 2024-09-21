@@ -10,6 +10,7 @@ import { MessageResponse, ResponseToCallbackQuery, ResponseToMessage } from './r
 import { MaybePromise } from './types';
 import { UserDataProvider } from './userData';
 import { prepareErrorForLogging } from './utils/error';
+import { isTruthy } from './utils/is';
 
 export type MessageErrorResponseContext = {
   err: unknown;
@@ -54,7 +55,7 @@ export type TelegramBotOptions<CommandType extends BaseCommand, CallbackData, Us
 export type MessageHandlerContext<CommandType extends BaseCommand, UserData> = {
   message: Message;
   userData?: UserData;
-  commands: CommandType[];
+  commands: (CommandType | string)[];
 };
 
 export type MessageHandler<
@@ -101,6 +102,7 @@ export class TelegramBot<
   > = {};
   private readonly _getMessageErrorResponse?: GetMessageErrorResponse<CommandType, CallbackData, UserData>;
   private readonly _getCallbackQueryErrorResponse?: GetCallbackQueryErrorResponse<CommandType, CallbackData, UserData>;
+  private _meInfo?: User;
 
   readonly api: TelegramBotApi;
   readonly commands?: BotCommands<CommandType>;
@@ -165,21 +167,48 @@ export class TelegramBot<
   async start(): Promise<void> {
     this.api.on('message', async (message) => {
       try {
-        const { from: user, text } = message;
+        const { from: user, text, entities } = message;
 
         if (user && !this.isUserAllowed(user)) {
           return;
         }
 
         const userData = user && (await this.userDataProvider?.getOrCreateUserData(user.id));
+        const commands =
+          entities
+            ?.filter(({ type, offset, length }) => type === 'bot_command')
+            .map(({ offset, length }) => {
+              const fullCommand = text?.slice(offset, offset + length);
+
+              if (!fullCommand) {
+                return;
+              }
+
+              const split = fullCommand.split('@');
+              const botUsername = split.at(1);
+
+              if (botUsername && botUsername !== this._meInfo?.username) {
+                return;
+              }
+
+              return split[0];
+            })
+            .filter(isTruthy) ?? [];
 
         let handler: MessageHandler<CommandType, CallbackData, UserData, UserData> | null | undefined;
 
-        if (text && text in this._commandHandlers) {
-          handler = this._commandHandlers[text as CommandType];
+        // TODO: add support for multiple commands
+        for (const command of commands) {
+          if (command in this._commandHandlers) {
+            handler = this._commandHandlers[command as CommandType];
+          }
+
+          if (handler) {
+            break;
+          }
         }
 
-        if (userData && !handler) {
+        if (!handler && userData) {
           handler = this.userDataProvider?.getUserDataHandler<UserData>(userData);
         }
 
@@ -190,8 +219,7 @@ export class TelegramBot<
         const response = await handler({
           message,
           userData,
-          // TODO: fill
-          commands: [],
+          commands,
         });
 
         if (response) {
@@ -322,6 +350,9 @@ export class TelegramBot<
         await this.api.setMyCommands({
           commands: commandsArray,
         });
+      })(),
+      (async () => {
+        this._meInfo = await this.api.getMe();
       })(),
     ]);
   }

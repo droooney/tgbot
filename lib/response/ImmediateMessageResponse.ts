@@ -15,6 +15,8 @@ export type MessageResponseTextContent = {
 export type MessageResponsePhotoContent = {
   type: 'photo';
   photo: InputFile | string;
+  text?: string | Markdown;
+  parseMode?: ParseMode;
   showCaptionAboveMedia?: boolean;
   hasSpoiler?: boolean;
 };
@@ -50,38 +52,45 @@ export class ImmediateMessageResponse<CommandType extends BaseCommand, CallbackD
     const editBasicOptions = {
       chat_id: ctx.message.chat.id,
       message_id: ctx.message.message_id,
+      business_connection_id: ctx.message.business_connection_id,
       reply_markup: await this.getReplyMarkup(ctx.bot),
     };
     const { content } = this;
 
-    if (content.type === 'text') {
-      let editedMessage: Message | null = null;
+    let editedMessage: Message | true | undefined;
 
-      try {
-        const editResult = await ctx.bot.api.editMessageText({
+    try {
+      if (content.type === 'text') {
+        editedMessage = await ctx.bot.api.editMessageText({
           ...editBasicOptions,
           text: content.text.toString(),
           parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
           link_preview_options: content.linkPreviewOptions,
         });
-
-        if (typeof editResult === 'object') {
-          editedMessage = editResult;
-        }
-      } catch (err) {
-        if (!(err instanceof Error) || !/message is not modified/.test(err.message)) {
-          throw err;
-        }
+      } else if (content.type === 'photo') {
+        editedMessage = await ctx.bot.api.editMessageMedia({
+          ...editBasicOptions,
+          media: {
+            type: 'photo',
+            media: content.photo,
+            caption: content.text?.toString(),
+            parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
+            show_caption_above_media: content.showCaptionAboveMedia,
+            has_spoiler: content.hasSpoiler,
+          },
+        });
       }
-
-      if (!editedMessage) {
-        throw new TelegramBotError(TelegramBotErrorCode.EditSameContent);
+    } catch (err) {
+      if (!(err instanceof Error) || !/message is not modified/.test(err.message)) {
+        throw err;
       }
-
-      return editedMessage;
     }
 
-    throw new TelegramBotError(TelegramBotErrorCode.UnsupportedContent);
+    if (typeof editedMessage !== 'object') {
+      throw new TelegramBotError(TelegramBotErrorCode.EditSameContent);
+    }
+
+    return editedMessage;
   }
 
   async send(ctx: SendMessageContext<CommandType, CallbackData, UserData>): Promise<Message> {
@@ -111,6 +120,8 @@ export class ImmediateMessageResponse<CommandType extends BaseCommand, CallbackD
       return ctx.bot.api.sendPhoto({
         ...sendBasicOptions,
         photo: content.photo,
+        caption: content.text?.toString(),
+        parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
         show_caption_above_media: content.showCaptionAboveMedia,
         has_spoiler: content.hasSpoiler,
         // FIXME: remove when typings are fixed

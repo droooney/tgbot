@@ -1,7 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { ImmediateMessageResponse, Markdown, TelegramBot } from '../../lib';
+import { z } from 'zod';
+
+import { ImmediateMessageResponse, JsonCallbackDataProvider, Markdown, TelegramBot } from '../../lib';
 import { CreateBot } from '../runExample';
 
 const commands = {
@@ -12,10 +14,27 @@ const commands = {
   '/sticker': 'Sticker',
 };
 
-const createBot: CreateBot<keyof typeof commands> = (token) => {
+type BotCommand = keyof typeof commands;
+
+const callbackData = z.union([
+  z.object({
+    type: z.literal('editSimpleText'),
+  }),
+  z.object({
+    type: z.literal('editPhoto'),
+  }),
+]);
+
+type CallbackData = z.TypeOf<typeof callbackData>;
+
+const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
+  const callbackDataProvider = new JsonCallbackDataProvider<BotCommand, CallbackData>({
+    parseJson: (json) => callbackData.parse(JSON.parse(json)),
+  });
   const bot = new TelegramBot({
     token,
     commands,
+    callbackDataProvider,
   });
 
   bot.handleCommand('/start', async () => {
@@ -33,6 +52,17 @@ const createBot: CreateBot<keyof typeof commands> = (token) => {
         type: 'text',
         text: 'Simple text response',
       },
+      replyMarkup: [
+        [
+          {
+            type: 'callbackData',
+            text: 'Edit text',
+            callbackData: {
+              type: 'editSimpleText',
+            },
+          },
+        ],
+      ],
     });
   });
 
@@ -112,7 +142,19 @@ blockquote row 9`,
       content: {
         type: 'photo',
         photo: fs.createReadStream(path.resolve('./examples/assets/tree.png')),
+        text: Markdown.create`caption with ${Markdown.bold('bold')} text`,
       },
+      replyMarkup: [
+        [
+          {
+            type: 'callbackData',
+            text: 'Edit photo',
+            callbackData: {
+              type: 'editPhoto',
+            },
+          },
+        ],
+      ],
     });
   });
 
@@ -121,6 +163,25 @@ blockquote row 9`,
       content: {
         type: 'sticker',
         sticker: 'CAACAgIAAxkBAAO8Zu4QdD3371GUb8FesINmN-A8pWcAAgEAA8A2TxMYLnMwqz8tUTYE',
+      },
+    });
+  });
+
+  callbackDataProvider.handle('editSimpleText', async () => {
+    return new ImmediateMessageResponse({
+      content: {
+        type: 'text',
+        text: 'edited text',
+      },
+    });
+  });
+
+  callbackDataProvider.handle('editPhoto', async () => {
+    return new ImmediateMessageResponse({
+      content: {
+        type: 'photo',
+        photo: fs.createReadStream(path.resolve('./examples/assets/house.png')),
+        text: Markdown.create`edited caption with ${Markdown.bold('bold')} text`,
       },
     });
   });

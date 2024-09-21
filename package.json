@@ -33,7 +33,7 @@
     "zod": "^3.23.8"
   },
   "dependencies": {
-    "typescript-telegram-bot-api": "^0.3.0"
+    "typescript-telegram-bot-api": "^0.3.3"
   },
   "repository": {
     "type": "git",
