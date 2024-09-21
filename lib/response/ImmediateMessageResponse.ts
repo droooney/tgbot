@@ -35,11 +35,11 @@ export type ImmediateMessageResponseOptions<CallbackData> = MessageResponseOptio
   content: MessageResponseContent;
 };
 
-export class ImmediateMessageResponse<CommandType extends BaseCommand, CallbackData, UserData> extends MessageResponse<
-  CommandType,
-  CallbackData,
-  UserData
-> {
+export class ImmediateMessageResponse<
+  CommandType extends BaseCommand = never,
+  CallbackData = never,
+  UserData = never,
+> extends MessageResponse<CommandType, CallbackData, UserData> {
   readonly content: MessageResponseContent;
 
   constructor(options: ImmediateMessageResponseOptions<CallbackData>) {

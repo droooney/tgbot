@@ -3,7 +3,12 @@ import path from 'node:path';
 
 import { z } from 'zod';
 
-import { ImmediateMessageResponse, JsonCallbackDataProvider, Markdown, TelegramBot } from '../../lib';
+import {
+  JsonCallbackDataProvider,
+  ImmediateMessageResponse as LibImmediateMessageResponse,
+  Markdown,
+  TelegramBot,
+} from '../../lib';
 import { CreateBot } from '../runExample';
 
 const commands = {
@@ -26,6 +31,8 @@ const callbackData = z.union([
 ]);
 
 type CallbackData = z.TypeOf<typeof callbackData>;
+
+const ImmediateMessageResponse = LibImmediateMessageResponse<BotCommand, CallbackData>;
 
 const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
   const callbackDataProvider = new JsonCallbackDataProvider<BotCommand, CallbackData>({

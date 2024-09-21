@@ -3,11 +3,11 @@ import { isTruthy } from '../utils/is';
 import { MessageResponse } from './MessageResponse';
 import { RespondToCallbackQueryContext, RespondToMessageContext, Response } from './Response';
 
-export class MultipleMessageResponse<CommandType extends BaseCommand, CallbackData, UserData> extends Response<
-  CommandType,
-  CallbackData,
-  UserData
-> {
+export class MultipleMessageResponse<
+  CommandType extends BaseCommand = never,
+  CallbackData = never,
+  UserData = never,
+> extends Response<CommandType, CallbackData, UserData> {
   private readonly _responses: MessageResponse<CommandType, CallbackData, UserData>[];
 
   constructor(responses: (MessageResponse<CommandType, CallbackData, UserData> | null | undefined | false | '')[]) {
