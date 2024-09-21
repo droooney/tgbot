@@ -34,16 +34,20 @@ export type BotCommands<CommandType extends BaseCommand> = Partial<Record<Comman
 export type TelegramBotOptions<CommandType extends BaseCommand, CallbackData, UserData> = {
   token: string;
   commands?: BotCommands<CommandType>;
-  callbackDataProvider?: CallbackDataProvider<CommandType, CallbackData, UserData>;
+  callbackDataProvider?: CallbackDataProvider<NoInfer<CommandType>, CallbackData, NoInfer<UserData>>;
   usernameWhitelist?: string[];
-  getMessageErrorResponse?: GetMessageErrorResponse<CommandType, CallbackData, UserData>;
-  getCallbackQueryErrorResponse?: GetCallbackQueryErrorResponse<CommandType, CallbackData, UserData>;
+  getMessageErrorResponse?: GetMessageErrorResponse<NoInfer<CommandType>, NoInfer<CallbackData>, NoInfer<UserData>>;
+  getCallbackQueryErrorResponse?: GetCallbackQueryErrorResponse<
+    NoInfer<CommandType>,
+    NoInfer<CallbackData>,
+    NoInfer<UserData>
+  >;
 } & ([UserData] extends [never]
   ? {
       userDataProvider?: never;
     }
   : {
-      userDataProvider: UserDataProvider<CommandType, CallbackData, UserData>;
+      userDataProvider: UserDataProvider<NoInfer<CommandType>, NoInfer<CallbackData>, UserData>;
     });
 
 export type MessageHandlerContext<CommandType extends BaseCommand, UserData> = {
@@ -53,9 +57,9 @@ export type MessageHandlerContext<CommandType extends BaseCommand, UserData> = {
 };
 
 export type MessageHandler<
-  CommandType extends BaseCommand,
-  CallbackData,
-  UserData,
+  in out CommandType extends BaseCommand,
+  in out CallbackData,
+  in out UserData,
   MessageUserData extends UserData,
 > = (
   ctx: MessageHandlerContext<CommandType, MessageUserData>,
@@ -68,9 +72,9 @@ export type CallbackQueryHandlerContext<UserData, QueryCallbackData> = {
 };
 
 export type CallbackQueryHandler<
-  CommandType extends BaseCommand,
-  CallbackData,
-  UserData,
+  in out CommandType extends BaseCommand,
+  in out CallbackData,
+  in out UserData,
   QueryCallbackData extends CallbackData,
 > = (
   ctx: CallbackQueryHandlerContext<UserData, QueryCallbackData>,
@@ -87,9 +91,9 @@ export type TelegramBotEvents = {
 };
 
 export class TelegramBot<
-  CommandType extends BaseCommand,
-  CallbackData,
-  UserData,
+  in out CommandType extends BaseCommand = never,
+  in out CallbackData = never,
+  in out UserData = never,
 > extends EventEmitter<TelegramBotEvents> {
   private readonly _commandHandlers: Partial<
     Record<CommandType, MessageHandler<CommandType, CallbackData, UserData, UserData>>

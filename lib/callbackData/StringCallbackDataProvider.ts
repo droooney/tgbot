@@ -2,9 +2,9 @@ import { BaseCommand, CallbackQueryHandler } from '../TelegramBot';
 import { CallbackDataProvider } from './CallbackDataProvider';
 
 export class StringCallbackDataProvider<
-  CommandType extends BaseCommand = never,
-  CallbackData extends string = never,
-  UserData = never,
+  in out CommandType extends BaseCommand = never,
+  in out CallbackData extends string = never,
+  in out UserData = never,
 > extends CallbackDataProvider<CommandType, CallbackData, UserData> {
   private readonly _handlers: {
     [Data in CallbackData]?: CallbackQueryHandler<CommandType, CallbackData, UserData, Data>;

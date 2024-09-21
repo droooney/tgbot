@@ -20,9 +20,9 @@ export type JsonCallbackDataProviderOptions<
 };
 
 export class JsonCallbackDataProvider<
-  CommandType extends BaseCommand = never,
-  CallbackData extends BaseJsonCallbackData<BaseJsonCallbackDataType> = never,
-  UserData = never,
+  in out CommandType extends BaseCommand = never,
+  in out CallbackData extends BaseJsonCallbackData<BaseJsonCallbackDataType> = never,
+  in out UserData = never,
 > extends CallbackDataProvider<CommandType, CallbackData, UserData> {
   private readonly _handlers: {
     [Type in CallbackData['type']]?: CallbackQueryHandler<
