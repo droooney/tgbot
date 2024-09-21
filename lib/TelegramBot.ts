@@ -2,6 +2,7 @@ import { EventEmitter } from 'node:events';
 
 import { TelegramBot as TelegramBotApi } from 'typescript-telegram-bot-api';
 import { BotCommand, CallbackQuery, Message, User } from 'typescript-telegram-bot-api/dist/types';
+import { ReplyParameters } from 'typescript-telegram-bot-api/dist/types/ReplyParameters';
 
 import { TelegramBotError, TelegramBotErrorCode } from './TelegramBotError';
 import { CallbackDataProvider } from './callbackData';
@@ -83,7 +84,7 @@ export type CallbackQueryHandler<
 export type BaseCommand = `/${string}`;
 
 export type SendMessageOptions = {
-  replyToMessageId?: number;
+  replyParameters?: ReplyParameters;
 };
 
 export type TelegramBotEvents = {
@@ -157,7 +158,7 @@ export class TelegramBot<
     return response.send({
       chatId,
       bot: this,
-      replyToMessageId: options?.replyToMessageId,
+      replyParameters: options?.replyParameters,
     });
   }
 

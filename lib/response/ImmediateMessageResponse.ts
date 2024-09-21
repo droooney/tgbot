@@ -12,12 +12,22 @@ export type MessageResponseTextContent = {
   linkPreviewOptions?: LinkPreviewOptions;
 };
 
+export type MessageResponsePhotoContent = {
+  type: 'photo';
+  photo: InputFile | string;
+  showCaptionAboveMedia?: boolean;
+  hasSpoiler?: boolean;
+};
+
 export type MessageResponseStickerContent = {
   type: 'sticker';
   sticker: InputFile | string;
 };
 
-export type MessageResponseContent = MessageResponseTextContent | MessageResponseStickerContent;
+export type MessageResponseContent =
+  | MessageResponseTextContent
+  | MessageResponsePhotoContent
+  | MessageResponseStickerContent;
 
 export type ImmediateMessageResponseOptions<CallbackData> = MessageResponseOptions<CallbackData> & {
   content: MessageResponseContent;
@@ -80,10 +90,11 @@ export class ImmediateMessageResponse<CommandType extends BaseCommand, CallbackD
       business_connection_id: ctx.businessConnectionId,
       message_thread_id: ctx.messageThreadId,
       disable_notification: ctx.disableNotification ?? this.disableNotification,
-      reply_to_message_id: ctx.replyToMessageId,
+      reply_parameters: ctx.replyParameters,
       reply_markup: await this.getReplyMarkup(ctx.bot),
       protect_content: ctx.protectContent ?? this.protectContent,
       allow_sending_without_reply: ctx.allowSendingWithoutReply ?? this.allowSendingWithoutReply,
+      message_effect_id: ctx.messageEffectId ?? this.messageEffectId,
     };
     const { content } = this;
 
@@ -94,6 +105,16 @@ export class ImmediateMessageResponse<CommandType extends BaseCommand, CallbackD
         parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
         link_preview_options: content.linkPreviewOptions,
       });
+    }
+
+    if (content.type === 'photo') {
+      return ctx.bot.api.sendPhoto({
+        ...sendBasicOptions,
+        photo: content.photo,
+        show_caption_above_media: content.showCaptionAboveMedia,
+        has_spoiler: content.hasSpoiler,
+        // FIXME: remove when typings are fixed
+      }) as Promise<Message>;
     }
 
     if (content.type === 'sticker') {

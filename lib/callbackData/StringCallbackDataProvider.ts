@@ -16,6 +16,7 @@ export class StringCallbackDataProvider<
     return this._handlers[data] ?? null;
   };
 
+  // TODO: add support for regex
   handle<Data extends CallbackData>(
     data: Data | Data[],
     handler: CallbackQueryHandler<CommandType, CallbackData, UserData, Data>,

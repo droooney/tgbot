@@ -1,4 +1,5 @@
 import { InlineKeyboardMarkup, Message } from 'typescript-telegram-bot-api/dist/types';
+import { ReplyParameters } from 'typescript-telegram-bot-api/dist/types/ReplyParameters';
 
 import { BaseCommand, TelegramBot } from '../TelegramBot';
 import { TelegramBotError, TelegramBotErrorCode } from '../TelegramBotError';
@@ -16,10 +17,11 @@ export type SendMessageContext<CommandType extends BaseCommand, CallbackData, Us
   chatId: number;
   businessConnectionId?: string;
   messageThreadId?: number;
-  replyToMessageId?: number;
+  replyParameters?: ReplyParameters;
   disableNotification?: boolean;
   protectContent?: boolean;
   allowSendingWithoutReply?: boolean;
+  messageEffectId?: string;
 };
 
 export type ReplyMarkup<CallbackData> = InlineKeyboard<CallbackData>;
@@ -29,6 +31,7 @@ export type MessageResponseOptions<CallbackData> = {
   replyMarkup?: ReplyMarkup<CallbackData>;
   protectContent?: boolean;
   allowSendingWithoutReply?: boolean;
+  messageEffectId?: string;
 };
 
 export abstract class MessageResponse<CommandType extends BaseCommand, CallbackData, UserData> extends Response<
@@ -40,6 +43,7 @@ export abstract class MessageResponse<CommandType extends BaseCommand, CallbackD
   readonly replyMarkup?: ReplyMarkup<CallbackData>;
   readonly protectContent?: boolean;
   readonly allowSendingWithoutReply?: boolean;
+  readonly messageEffectId?: string;
 
   protected constructor(options?: MessageResponseOptions<CallbackData>) {
     super();
@@ -48,6 +52,7 @@ export abstract class MessageResponse<CommandType extends BaseCommand, CallbackD
     this.replyMarkup = options?.replyMarkup;
     this.protectContent = options?.protectContent;
     this.allowSendingWithoutReply = options?.allowSendingWithoutReply;
+    this.messageEffectId = options?.messageEffectId;
   }
 
   abstract edit(ctx: EditMessageContext<CommandType, CallbackData, UserData>): Promise<Message>;
@@ -89,7 +94,9 @@ export abstract class MessageResponse<CommandType extends BaseCommand, CallbackD
       bot: ctx.bot,
       chatId: ctx.message.chat.id,
       messageThreadId: ctx.message.message_thread_id,
-      replyToMessageId: ctx.message.message_id,
+      replyParameters: {
+        message_id: ctx.message.message_id,
+      },
     });
   };
 }

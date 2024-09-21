@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 import { ImmediateMessageResponse, Markdown, TelegramBot } from '../../lib';
 import { CreateBot } from '../runExample';
 
@@ -5,6 +8,8 @@ const commands = {
   '/start': undefined,
   '/simple': 'Simple text response',
   '/markdown': 'Markdown',
+  '/photo': 'Photo',
+  '/sticker': 'Sticker',
 };
 
 const createBot: CreateBot<keyof typeof commands> = (token) => {
@@ -98,6 +103,24 @@ blockquote row 9`,
   true,
 )}
 `,
+      },
+    });
+  });
+
+  bot.handleCommand('/photo', async () => {
+    return new ImmediateMessageResponse({
+      content: {
+        type: 'photo',
+        photo: fs.createReadStream(path.resolve('./examples/assets/tree.png')),
+      },
+    });
+  });
+
+  bot.handleCommand('/sticker', async () => {
+    return new ImmediateMessageResponse({
+      content: {
+        type: 'sticker',
+        sticker: 'CAACAgIAAxkBAAO8Zu4QdD3371GUb8FesINmN-A8pWcAAgEAA8A2TxMYLnMwqz8tUTYE',
       },
     });
   });
