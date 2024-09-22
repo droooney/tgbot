@@ -21,6 +21,7 @@ const commands = {
   '/document': 'Document',
   '/large_document': 'Large document',
   '/video': 'Video',
+  '/voice': 'Voice',
   '/sticker': 'Sticker',
 };
 
@@ -272,6 +273,16 @@ blockquote row 9`,
             ],
           ],
         }),
+    });
+  });
+
+  bot.handleCommand('/voice', async () => {
+    return new ImmediateMessageResponse({
+      content: {
+        type: 'voice',
+        voice: fs.createReadStream(path.resolve('./examples/assets/audio1.mp3')),
+        text: Markdown.create`caption with ${Markdown.bold('bold')} text`,
+      },
     });
   });
 

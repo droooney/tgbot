@@ -55,6 +55,16 @@ export type MessageResponseVideoContent = {
   supportsStreaming?: boolean;
 };
 
+// TODO: animation content
+
+export type MessageResponseVoiceContent = {
+  type: 'voice';
+  voice: InputFile | string;
+  duration?: number;
+  text?: string | Markdown;
+  parseMode?: ParseMode;
+};
+
 export type MessageResponseStickerContent = {
   type: 'sticker';
   sticker: InputFile | string;
@@ -66,6 +76,7 @@ export type MessageResponseContent =
   | MessageResponseAudioContent
   | MessageResponseDocumentContent
   | MessageResponseVideoContent
+  | MessageResponseVoiceContent
   | MessageResponseStickerContent;
 
 export type ImmediateMessageResponseOptions<CallbackData> = MessageResponseOptions<CallbackData> & {
@@ -245,6 +256,16 @@ export class ImmediateMessageResponse<
         show_caption_above_media: content.showCaptionAboveMedia,
         has_spoiler: content.hasSpoiler,
         supports_streaming: content.supportsStreaming,
+      });
+    }
+
+    if (content.type === 'voice') {
+      return ctx.bot.api.sendVoice({
+        ...sendBasicOptions,
+        voice: content.voice,
+        duration: content.duration,
+        caption: content.text?.toString(),
+        parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
       });
     }
 
