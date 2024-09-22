@@ -1,14 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { z } from 'zod';
-
 import {
   ChatActionResponse,
-  JsonCallbackDataProvider,
   ImmediateMessageResponse as LibImmediateMessageResponse,
   Markdown,
   MessageReactionResponse,
+  NotificationResponse,
+  StringCallbackDataProvider,
   TelegramBot,
 } from '../../lib';
 import { CreateBot } from '../runExample';
@@ -26,41 +25,27 @@ const commands = {
   '/video_note': 'Video note',
   '/sticker': 'Sticker',
   '/reaction': 'Random reaction',
+  '/notification_showcase': 'Notification showcase',
 };
 
 type BotCommand = keyof typeof commands;
 
-const callbackData = z.union([
-  z.object({
-    type: z.literal('editSimpleText'),
-  }),
-  z.object({
-    type: z.literal('editPhoto'),
-  }),
-  z.object({
-    type: z.literal('editAudio'),
-  }),
-  z.object({
-    type: z.literal('editDocument'),
-  }),
-  z.object({
-    type: z.literal('editDocumentWithPhoto'),
-  }),
-  z.object({
-    type: z.literal('editVideo'),
-  }),
-]);
-
-type CallbackData = z.TypeOf<typeof callbackData>;
+type CallbackData =
+  | 'editSimpleText'
+  | 'editPhoto'
+  | 'editAudio'
+  | 'editDocument'
+  | 'editDocumentWithPhoto'
+  | 'editVideo'
+  | 'responseWithNotification'
+  | 'responseWithNotificationAlert';
 
 const ImmediateMessageResponse = LibImmediateMessageResponse<BotCommand, CallbackData>;
 
 const reactionsPool = ['👍', '👎', '❤', '🔥', '🥰', '👏', '😁', '🤔', '🤯', '😱', '🤬', '😢', '🎉'] as const;
 
 const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
-  const callbackDataProvider = new JsonCallbackDataProvider<BotCommand, CallbackData>({
-    parseJson: (json) => callbackData.parse(JSON.parse(json)),
-  });
+  const callbackDataProvider = new StringCallbackDataProvider<BotCommand, CallbackData>();
   const bot = new TelegramBot({
     token,
     commands,
@@ -87,9 +72,7 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
           {
             type: 'callbackData',
             text: 'Edit text',
-            callbackData: {
-              type: 'editSimpleText',
-            },
+            callbackData: 'editSimpleText',
           },
         ],
       ],
@@ -179,9 +162,7 @@ blockquote row 9`,
           {
             type: 'callbackData',
             text: 'Edit photo',
-            callbackData: {
-              type: 'editPhoto',
-            },
+            callbackData: 'editPhoto',
           },
         ],
       ],
@@ -203,9 +184,7 @@ blockquote row 9`,
           {
             type: 'callbackData',
             text: 'Edit audio',
-            callbackData: {
-              type: 'editAudio',
-            },
+            callbackData: 'editAudio',
           },
         ],
       ],
@@ -224,18 +203,14 @@ blockquote row 9`,
           {
             type: 'callbackData',
             text: 'Edit document',
-            callbackData: {
-              type: 'editDocument',
-            },
+            callbackData: 'editDocument',
           },
         ],
         [
           {
             type: 'callbackData',
             text: 'Edit document with photo',
-            callbackData: {
-              type: 'editDocumentWithPhoto',
-            },
+            callbackData: 'editDocumentWithPhoto',
           },
         ],
       ],
@@ -271,9 +246,7 @@ blockquote row 9`,
               {
                 type: 'callbackData',
                 text: 'Edit video',
-                callbackData: {
-                  type: 'editVideo',
-                },
+                callbackData: 'editVideo',
               },
             ],
           ],
@@ -322,6 +295,31 @@ blockquote row 9`,
         type: 'emoji',
         emoji: randomEmoji,
       },
+    });
+  });
+
+  bot.handleCommand('/notification_showcase', async () => {
+    return new ImmediateMessageResponse({
+      content: {
+        type: 'text',
+        text: 'Notification showcase',
+      },
+      replyMarkup: [
+        [
+          {
+            type: 'callbackData',
+            text: 'Notification response',
+            callbackData: 'responseWithNotification',
+          },
+        ],
+        [
+          {
+            type: 'callbackData',
+            text: 'Alert response',
+            callbackData: 'responseWithNotificationAlert',
+          },
+        ],
+      ],
     });
   });
 
@@ -375,6 +373,19 @@ blockquote row 9`,
         text: Markdown.create`edited caption with ${Markdown.bold('bold')} text`,
         thumbnail: fs.createReadStream(path.resolve('./examples/assets/thumb2.png')),
       },
+    });
+  });
+
+  callbackDataProvider.handle('responseWithNotification', async () => {
+    return new NotificationResponse({
+      text: 'Notification response',
+    });
+  });
+
+  callbackDataProvider.handle('responseWithNotificationAlert', async () => {
+    return new NotificationResponse({
+      text: 'Alert response',
+      showAlert: true,
     });
   });
 

@@ -3,4 +3,5 @@ export * from './ImmediateMessageResponse';
 export * from './MessageReactionResponse';
 export * from './MessageResponse';
 export * from './MultipleMessageResponse';
+export * from './NotificationResponse';
 export * from './Response';
