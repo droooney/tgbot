@@ -17,6 +17,7 @@ const commands = {
   '/simple': 'Simple text response',
   '/markdown': 'Markdown',
   '/photo': 'Photo',
+  '/audio': 'Audio',
   '/document': 'Document',
   '/large_document': 'Large document',
   '/video': 'Video',
@@ -31,6 +32,9 @@ const callbackData = z.union([
   }),
   z.object({
     type: z.literal('editPhoto'),
+  }),
+  z.object({
+    type: z.literal('editAudio'),
   }),
   z.object({
     type: z.literal('editDocument'),
@@ -161,7 +165,7 @@ blockquote row 9`,
     return new ImmediateMessageResponse({
       content: {
         type: 'photo',
-        photo: fs.createReadStream(path.resolve('./examples/assets/tree.png')),
+        photo: fs.createReadStream(path.resolve('./examples/assets/house.png')),
         text: Markdown.create`caption with ${Markdown.bold('bold')} text`,
       },
       replyMarkup: [
@@ -171,6 +175,30 @@ blockquote row 9`,
             text: 'Edit photo',
             callbackData: {
               type: 'editPhoto',
+            },
+          },
+        ],
+      ],
+    });
+  });
+
+  bot.handleCommand('/audio', async () => {
+    return new ImmediateMessageResponse({
+      content: {
+        type: 'audio',
+        audio: fs.createReadStream(path.resolve('./examples/assets/audio1.mp3')),
+        text: Markdown.create`caption with ${Markdown.bold('bold')} text`,
+        performer: 'Cool performer',
+        title: 'Cool title',
+        thumbnail: fs.createReadStream(path.resolve('./examples/assets/thumb1.png')),
+      },
+      replyMarkup: [
+        [
+          {
+            type: 'callbackData',
+            text: 'Edit audio',
+            callbackData: {
+              type: 'editAudio',
             },
           },
         ],
@@ -230,6 +258,7 @@ blockquote row 9`,
             type: 'video',
             video: fs.createReadStream(path.resolve('./examples/assets/video1.mp4')),
             text: Markdown.create`caption with ${Markdown.bold('bold')} text`,
+            thumbnail: fs.createReadStream(path.resolve('./examples/assets/thumb1.png')),
           },
           replyMarkup: [
             [
@@ -264,12 +293,25 @@ blockquote row 9`,
     });
   });
 
-  callbackDataProvider.handle('editPhoto', async () => {
+  callbackDataProvider.handle(['editPhoto', 'editDocumentWithPhoto'], async () => {
     return new ImmediateMessageResponse({
       content: {
         type: 'photo',
-        photo: fs.createReadStream(path.resolve('./examples/assets/house.png')),
+        photo: fs.createReadStream(path.resolve('./examples/assets/house_heart.png')),
         text: Markdown.create`edited caption with ${Markdown.bold('bold')} text`,
+      },
+    });
+  });
+
+  callbackDataProvider.handle('editAudio', async () => {
+    return new ImmediateMessageResponse({
+      content: {
+        type: 'audio',
+        audio: fs.createReadStream(path.resolve('./examples/assets/audio2.mp3')),
+        text: Markdown.create`edited caption with ${Markdown.bold('bold')} text`,
+        performer: 'New performer',
+        title: 'New title',
+        thumbnail: fs.createReadStream(path.resolve('./examples/assets/thumb2.png')),
       },
     });
   });
@@ -284,22 +326,13 @@ blockquote row 9`,
     });
   });
 
-  callbackDataProvider.handle('editDocumentWithPhoto', async () => {
-    return new ImmediateMessageResponse({
-      content: {
-        type: 'photo',
-        photo: fs.createReadStream(path.resolve('./examples/assets/house.png')),
-        text: Markdown.create`edited caption with ${Markdown.bold('bold')} text`,
-      },
-    });
-  });
-
   callbackDataProvider.handle('editVideo', async () => {
     return new ImmediateMessageResponse({
       content: {
         type: 'video',
         video: fs.createReadStream(path.resolve('./examples/assets/video2.mp4')),
         text: Markdown.create`edited caption with ${Markdown.bold('bold')} text`,
+        thumbnail: fs.createReadStream(path.resolve('./examples/assets/thumb2.png')),
       },
     });
   });

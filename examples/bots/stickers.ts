@@ -63,8 +63,18 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
           stickers: [
             {
               format: 'static',
-              sticker: fs.createReadStream(path.resolve('./examples/assets/tree.png')),
-              emoji_list: ['😁', '😃', '😅'],
+              sticker: fs.createReadStream(path.resolve('./examples/assets/house.png')),
+              emoji_list: ['😁'],
+            },
+            {
+              format: 'static',
+              sticker: fs.createReadStream(path.resolve('./examples/assets/house_heart.png')),
+              emoji_list: ['😃'],
+            },
+            {
+              format: 'static',
+              sticker: fs.createReadStream(path.resolve('./examples/assets/house_trees.png')),
+              emoji_list: ['😅'],
             },
           ],
         });

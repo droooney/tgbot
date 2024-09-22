@@ -21,6 +21,17 @@ export type MessageResponsePhotoContent = {
   hasSpoiler?: boolean;
 };
 
+export type MessageResponseAudioContent = {
+  type: 'audio';
+  audio: InputFile | string;
+  duration?: number;
+  performer?: string;
+  title?: string;
+  thumbnail?: InputFile | string;
+  text?: string | Markdown;
+  parseMode?: ParseMode;
+};
+
 export type MessageResponseDocumentContent = {
   type: 'document';
   document: InputFile | string;
@@ -52,6 +63,7 @@ export type MessageResponseStickerContent = {
 export type MessageResponseContent =
   | MessageResponseTextContent
   | MessageResponsePhotoContent
+  | MessageResponseAudioContent
   | MessageResponseDocumentContent
   | MessageResponseVideoContent
   | MessageResponseStickerContent;
@@ -102,6 +114,20 @@ export class ImmediateMessageResponse<
             parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
             show_caption_above_media: content.showCaptionAboveMedia,
             has_spoiler: content.hasSpoiler,
+          },
+        });
+      } else if (content.type === 'audio') {
+        editedMessage = await ctx.bot.api.editMessageMedia({
+          ...editBasicOptions,
+          media: {
+            type: 'audio',
+            media: content.audio,
+            duration: content.duration,
+            performer: content.performer,
+            title: content.title,
+            thumbnail: content.thumbnail,
+            caption: content.text?.toString(),
+            parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
           },
         });
       } else if (content.type === 'document') {
@@ -180,6 +206,19 @@ export class ImmediateMessageResponse<
         has_spoiler: content.hasSpoiler,
         // FIXME: remove when typings are fixed
       }) as Promise<Message>;
+    }
+
+    if (content.type === 'audio') {
+      return ctx.bot.api.sendAudio({
+        ...sendBasicOptions,
+        audio: content.audio,
+        duration: content.duration,
+        performer: content.performer,
+        title: content.title,
+        thumbnail: content.thumbnail,
+        caption: content.text?.toString(),
+        parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
+      });
     }
 
     if (content.type === 'document') {

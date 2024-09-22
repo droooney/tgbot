@@ -51,7 +51,7 @@ export class JsonCallbackDataProvider<
   };
 
   handle<Type extends CallbackData['type']>(
-    type: Type,
+    type: Type | Type[],
     handler: CallbackQueryHandler<CommandType, CallbackData, UserData, JsonCallbackDataByType<CallbackData, Type>>,
   ): this {
     for (const dataType of typeof type === 'string' ? [type] : type) {
