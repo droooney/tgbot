@@ -28,6 +28,7 @@ export type SendMessageContext<CommandType extends BaseCommand, CallbackData, Us
 export type ReplyMarkup<CallbackData> = InlineKeyboard<CallbackData>;
 
 export type MessageResponseOptions<CallbackData> = {
+  businessConnectionId?: string;
   disableNotification?: boolean;
   replyMarkup?: ReplyMarkup<CallbackData> | InlineKeyboardMarkup;
   protectContent?: boolean;
@@ -40,6 +41,7 @@ export abstract class MessageResponse<CommandType extends BaseCommand, CallbackD
   CallbackData,
   UserData
 > {
+  readonly businessConnectionId?: string;
   readonly disableNotification?: boolean;
   readonly replyMarkup?: ReplyMarkup<CallbackData> | InlineKeyboardMarkup;
   readonly protectContent?: boolean;
@@ -49,6 +51,7 @@ export abstract class MessageResponse<CommandType extends BaseCommand, CallbackD
   protected constructor(options?: MessageResponseOptions<CallbackData>) {
     super();
 
+    this.businessConnectionId = options?.businessConnectionId;
     this.disableNotification = options?.disableNotification;
     this.replyMarkup = options?.replyMarkup;
     this.protectContent = options?.protectContent;

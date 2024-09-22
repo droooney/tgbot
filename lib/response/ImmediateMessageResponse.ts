@@ -30,6 +30,20 @@ export type MessageResponseDocumentContent = {
   disableContentTypeDetection?: boolean;
 };
 
+export type MessageResponseVideoContent = {
+  type: 'video';
+  video: InputFile | string;
+  duration?: number;
+  width?: number;
+  height?: number;
+  thumbnail?: InputFile | string;
+  text?: string | Markdown;
+  parseMode?: ParseMode;
+  showCaptionAboveMedia?: boolean;
+  hasSpoiler?: boolean;
+  supportsStreaming?: boolean;
+};
+
 export type MessageResponseStickerContent = {
   type: 'sticker';
   sticker: InputFile | string;
@@ -39,6 +53,7 @@ export type MessageResponseContent =
   | MessageResponseTextContent
   | MessageResponsePhotoContent
   | MessageResponseDocumentContent
+  | MessageResponseVideoContent
   | MessageResponseStickerContent;
 
 export type ImmediateMessageResponseOptions<CallbackData> = MessageResponseOptions<CallbackData> & {
@@ -62,7 +77,7 @@ export class ImmediateMessageResponse<
     const editBasicOptions = {
       chat_id: ctx.message.chat.id,
       message_id: ctx.message.message_id,
-      business_connection_id: ctx.message.business_connection_id,
+      business_connection_id: this.businessConnectionId,
       reply_markup: await this.getReplyMarkup(ctx.bot),
     };
     const { content } = this;
@@ -101,6 +116,23 @@ export class ImmediateMessageResponse<
             disable_content_type_detection: content.disableContentTypeDetection,
           },
         });
+      } else if (content.type === 'video') {
+        editedMessage = await ctx.bot.api.editMessageMedia({
+          ...editBasicOptions,
+          media: {
+            type: 'video',
+            media: content.video,
+            duration: content.duration,
+            width: content.width,
+            height: content.height,
+            thumbnail: content.thumbnail,
+            caption: content.text?.toString(),
+            parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
+            show_caption_above_media: content.showCaptionAboveMedia,
+            has_spoiler: content.hasSpoiler,
+            supports_streaming: content.supportsStreaming,
+          },
+        });
       }
     } catch (err) {
       if (!(err instanceof Error) || !/message is not modified/.test(err.message)) {
@@ -118,7 +150,7 @@ export class ImmediateMessageResponse<
   async send(ctx: SendMessageContext<CommandType, CallbackData, UserData>): Promise<Message> {
     const sendBasicOptions = {
       chat_id: ctx.chatId,
-      business_connection_id: ctx.businessConnectionId,
+      business_connection_id: ctx.businessConnectionId ?? this.businessConnectionId,
       message_thread_id: ctx.messageThreadId,
       disable_notification: ctx.disableNotification ?? this.disableNotification,
       reply_parameters: ctx.replyParameters,
@@ -158,6 +190,22 @@ export class ImmediateMessageResponse<
         caption: content.text?.toString(),
         parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
         disable_content_type_detection: content.disableContentTypeDetection,
+      });
+    }
+
+    if (content.type === 'video') {
+      return ctx.bot.api.sendVideo({
+        ...sendBasicOptions,
+        video: content.video,
+        duration: content.duration,
+        width: content.width,
+        height: content.height,
+        thumbnail: content.thumbnail,
+        caption: content.text?.toString(),
+        parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
+        show_caption_above_media: content.showCaptionAboveMedia,
+        has_spoiler: content.hasSpoiler,
+        supports_streaming: content.supportsStreaming,
       });
     }
 

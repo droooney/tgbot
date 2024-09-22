@@ -4,6 +4,7 @@ import path from 'node:path';
 import { z } from 'zod';
 
 import {
+  ChatActionResponse,
   JsonCallbackDataProvider,
   ImmediateMessageResponse as LibImmediateMessageResponse,
   Markdown,
@@ -17,6 +18,8 @@ const commands = {
   '/markdown': 'Markdown',
   '/photo': 'Photo',
   '/document': 'Document',
+  '/large_document': 'Large document',
+  '/video': 'Video',
   '/sticker': 'Sticker',
 };
 
@@ -34,6 +37,9 @@ const callbackData = z.union([
   }),
   z.object({
     type: z.literal('editDocumentWithPhoto'),
+  }),
+  z.object({
+    type: z.literal('editVideo'),
   }),
 ]);
 
@@ -202,6 +208,44 @@ blockquote row 9`,
     });
   });
 
+  bot.handleCommand('/large_document', async () => {
+    return new ChatActionResponse({
+      type: 'upload_document',
+      getResponse: () =>
+        new ImmediateMessageResponse({
+          content: {
+            type: 'document',
+            document: fs.createReadStream(path.resolve('./examples/assets/video0.mp4')),
+          },
+        }),
+    });
+  });
+
+  bot.handleCommand('/video', async () => {
+    return new ChatActionResponse({
+      type: 'upload_video',
+      getResponse: () =>
+        new ImmediateMessageResponse({
+          content: {
+            type: 'video',
+            video: fs.createReadStream(path.resolve('./examples/assets/video1.mp4')),
+            text: Markdown.create`caption with ${Markdown.bold('bold')} text`,
+          },
+          replyMarkup: [
+            [
+              {
+                type: 'callbackData',
+                text: 'Edit video',
+                callbackData: {
+                  type: 'editVideo',
+                },
+              },
+            ],
+          ],
+        }),
+    });
+  });
+
   bot.handleCommand('/sticker', async () => {
     return new ImmediateMessageResponse({
       content: {
@@ -245,6 +289,16 @@ blockquote row 9`,
       content: {
         type: 'photo',
         photo: fs.createReadStream(path.resolve('./examples/assets/house.png')),
+        text: Markdown.create`edited caption with ${Markdown.bold('bold')} text`,
+      },
+    });
+  });
+
+  callbackDataProvider.handle('editVideo', async () => {
+    return new ImmediateMessageResponse({
+      content: {
+        type: 'video',
+        video: fs.createReadStream(path.resolve('./examples/assets/video2.mp4')),
         text: Markdown.create`edited caption with ${Markdown.bold('bold')} text`,
       },
     });

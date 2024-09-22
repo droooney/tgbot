@@ -4,6 +4,7 @@ import path from 'node:path';
 import { z } from 'zod';
 
 import {
+  ChatActionResponse,
   JsonCallbackDataProvider,
   ImmediateMessageResponse as LibImmediateMessageResponse,
   MultipleMessageResponse,
@@ -49,55 +50,60 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
       return;
     }
 
-    const id = Math.random().toString().slice(2);
-    const name = await getTestSetName(id);
+    return new ChatActionResponse({
+      type: 'choose_sticker',
+      getResponse: async () => {
+        const id = Math.random().toString().slice(2);
+        const name = await getTestSetName(id);
 
-    await bot.api.createNewStickerSet({
-      user_id: user.id,
-      name,
-      title: 'Test Sticker Set',
-      stickers: [
-        {
-          format: 'static',
-          sticker: fs.createReadStream(path.resolve('./examples/assets/tree.png')),
-          emoji_list: ['😁', '😃', '😅'],
-        },
-      ],
-    });
-
-    const stickerSet = await bot.api.getStickerSet({
-      name,
-    });
-
-    const sticker = stickerSet.stickers.at(0)?.file_id;
-
-    return new MultipleMessageResponse([
-      new ImmediateMessageResponse({
-        content: {
-          type: 'text',
-          text: 'Set created',
-        },
-        replyMarkup: [
-          [
+        await bot.api.createNewStickerSet({
+          user_id: user.id,
+          name,
+          title: 'Test Sticker Set',
+          stickers: [
             {
-              type: 'callbackData',
-              text: 'Delete set',
-              callbackData: {
-                type: 'deleteSet',
-                id,
-              },
+              format: 'static',
+              sticker: fs.createReadStream(path.resolve('./examples/assets/tree.png')),
+              emoji_list: ['😁', '😃', '😅'],
             },
           ],
-        ],
-      }),
-      sticker &&
-        new ImmediateMessageResponse({
-          content: {
-            type: 'sticker',
-            sticker,
-          },
-        }),
-    ]);
+        });
+
+        const stickerSet = await bot.api.getStickerSet({
+          name,
+        });
+
+        const sticker = stickerSet.stickers.at(0)?.file_id;
+
+        return new MultipleMessageResponse([
+          new ImmediateMessageResponse({
+            content: {
+              type: 'text',
+              text: 'Set created',
+            },
+            replyMarkup: [
+              [
+                {
+                  type: 'callbackData',
+                  text: 'Delete set',
+                  callbackData: {
+                    type: 'deleteSet',
+                    id,
+                  },
+                },
+              ],
+            ],
+          }),
+          sticker &&
+            new ImmediateMessageResponse({
+              content: {
+                type: 'sticker',
+                sticker,
+              },
+            }),
+        ]);
+      },
+    });
   });
 
   callbackDataProvider.handle('deleteSet', async ({ data: { id } }) => {
