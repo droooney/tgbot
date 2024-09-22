@@ -44,13 +44,15 @@ export class ChatActionResponse<
 
     await Promise.all([
       (async () => {
-        const response = await this._getResponse();
+        try {
+          const response = await this._getResponse();
 
-        await response?.respondToMessage(ctx);
+          await response?.respondToMessage(ctx);
+        } finally {
+          responseSent = true;
 
-        responseSent = true;
-
-        promiseWithResolvers?.resolve();
+          promiseWithResolvers?.resolve();
+        }
       })(),
       (async () => {
         while (!responseSent) {

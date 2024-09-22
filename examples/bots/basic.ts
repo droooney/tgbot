@@ -22,6 +22,7 @@ const commands = {
   '/large_document': 'Large document',
   '/video': 'Video',
   '/voice': 'Voice',
+  '/video_note': 'Video note',
   '/sticker': 'Sticker',
 };
 
@@ -283,6 +284,20 @@ blockquote row 9`,
         voice: fs.createReadStream(path.resolve('./examples/assets/audio1.mp3')),
         text: Markdown.create`caption with ${Markdown.bold('bold')} text`,
       },
+    });
+  });
+
+  bot.handleCommand('/video_note', async () => {
+    return new ChatActionResponse({
+      type: 'upload_video_note',
+      getResponse: () =>
+        new ImmediateMessageResponse({
+          content: {
+            type: 'videoNote',
+            videoNote: fs.createReadStream(path.resolve('./examples/assets/video_note.mp4')),
+            thumbnail: fs.createReadStream(path.resolve('./examples/assets/thumb1.png')),
+          },
+        }),
     });
   });
 

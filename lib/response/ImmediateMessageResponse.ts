@@ -65,6 +65,14 @@ export type MessageResponseVoiceContent = {
   parseMode?: ParseMode;
 };
 
+export type MessageResponseVideoNoteContent = {
+  type: 'videoNote';
+  videoNote: InputFile | string;
+  duration?: number;
+  length?: number;
+  thumbnail?: InputFile | string;
+};
+
 export type MessageResponseStickerContent = {
   type: 'sticker';
   sticker: InputFile | string;
@@ -77,6 +85,7 @@ export type MessageResponseContent =
   | MessageResponseDocumentContent
   | MessageResponseVideoContent
   | MessageResponseVoiceContent
+  | MessageResponseVideoNoteContent
   | MessageResponseStickerContent;
 
 export type ImmediateMessageResponseOptions<CallbackData> = MessageResponseOptions<CallbackData> & {
@@ -266,6 +275,16 @@ export class ImmediateMessageResponse<
         duration: content.duration,
         caption: content.text?.toString(),
         parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
+      });
+    }
+
+    if (content.type === 'videoNote') {
+      return ctx.bot.api.sendVideoNote({
+        ...sendBasicOptions,
+        video_note: content.videoNote,
+        duration: content.duration,
+        length: content.length,
+        thumbnail: content.thumbnail,
       });
     }
 
