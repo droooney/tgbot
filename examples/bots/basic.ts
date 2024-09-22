@@ -8,6 +8,7 @@ import {
   JsonCallbackDataProvider,
   ImmediateMessageResponse as LibImmediateMessageResponse,
   Markdown,
+  MessageReactionResponse,
   TelegramBot,
 } from '../../lib';
 import { CreateBot } from '../runExample';
@@ -24,6 +25,7 @@ const commands = {
   '/voice': 'Voice',
   '/video_note': 'Video note',
   '/sticker': 'Sticker',
+  '/reaction': 'Random reaction',
 };
 
 type BotCommand = keyof typeof commands;
@@ -52,6 +54,8 @@ const callbackData = z.union([
 type CallbackData = z.TypeOf<typeof callbackData>;
 
 const ImmediateMessageResponse = LibImmediateMessageResponse<BotCommand, CallbackData>;
+
+const reactionsPool = ['👍', '👎', '❤', '🔥', '🥰', '👏', '😁', '🤔', '🤯', '😱', '🤬', '😢', '🎉'] as const;
 
 const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
   const callbackDataProvider = new JsonCallbackDataProvider<BotCommand, CallbackData>({
@@ -306,6 +310,17 @@ blockquote row 9`,
       content: {
         type: 'sticker',
         sticker: 'CAACAgIAAxkBAAO8Zu4QdD3371GUb8FesINmN-A8pWcAAgEAA8A2TxMYLnMwqz8tUTYE',
+      },
+    });
+  });
+
+  bot.handleCommand('/reaction', async () => {
+    const randomEmoji = reactionsPool[Math.floor(Math.random() * reactionsPool.length)];
+
+    return new MessageReactionResponse({
+      reaction: {
+        type: 'emoji',
+        emoji: randomEmoji,
       },
     });
   });

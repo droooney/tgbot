@@ -73,6 +73,9 @@ export type MessageResponseVideoNoteContent = {
   thumbnail?: InputFile | string;
 };
 
+// TODO: add paid media content
+// TODO: add media group content
+
 export type MessageResponseStickerContent = {
   type: 'sticker';
   sticker: InputFile | string;
