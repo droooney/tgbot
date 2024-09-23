@@ -113,7 +113,7 @@ export class ImmediateMessageResponse<
       chat_id: ctx.message.chat.id,
       message_id: ctx.message.message_id,
       business_connection_id: this.businessConnectionId,
-      reply_markup: await this.getReplyMarkup(ctx.bot),
+      reply_markup: await this.getInlineKeyboardReplyMarkup(ctx.bot),
     };
     const { content } = this;
 

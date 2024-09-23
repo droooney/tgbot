@@ -1,6 +1,13 @@
-import { InlineKeyboardMarkup, Message } from 'typescript-telegram-bot-api/dist/types';
+import {
+  ForceReply,
+  InlineKeyboardMarkup,
+  Message,
+  ReplyKeyboardMarkup,
+  ReplyKeyboardRemove,
+} from 'typescript-telegram-bot-api/dist/types';
 import { ReplyParameters } from 'typescript-telegram-bot-api/dist/types/ReplyParameters';
 
+import { ReplyKeyboard } from '../ReplyKeyboard';
 import { BaseCommand, TelegramBot } from '../TelegramBot';
 import { TelegramBotError, TelegramBotErrorCode } from '../TelegramBotError';
 import { InlineKeyboard } from '../inlineKeyboard';
@@ -25,12 +32,18 @@ export type SendMessageContext<CommandType extends BaseCommand, CallbackData, Us
   messageEffectId?: string;
 };
 
-export type ReplyMarkup<CallbackData> = InlineKeyboard<CallbackData>;
+export type ReplyMarkup<CallbackData> =
+  | InlineKeyboard<CallbackData>
+  | ReplyKeyboard
+  | InlineKeyboardMarkup
+  | ReplyKeyboardMarkup
+  | ReplyKeyboardRemove
+  | ForceReply;
 
 export type MessageResponseOptions<CallbackData> = {
   businessConnectionId?: string;
   disableNotification?: boolean;
-  replyMarkup?: ReplyMarkup<CallbackData> | InlineKeyboardMarkup;
+  replyMarkup?: ReplyMarkup<CallbackData>;
   protectContent?: boolean;
   allowSendingWithoutReply?: boolean;
   messageEffectId?: string;
@@ -43,7 +56,7 @@ export abstract class MessageResponse<CommandType extends BaseCommand, CallbackD
 > {
   readonly businessConnectionId?: string;
   readonly disableNotification?: boolean;
-  readonly replyMarkup?: ReplyMarkup<CallbackData> | InlineKeyboardMarkup;
+  readonly replyMarkup?: ReplyMarkup<CallbackData>;
   readonly protectContent?: boolean;
   readonly allowSendingWithoutReply?: boolean;
   readonly messageEffectId?: string;
@@ -62,14 +75,26 @@ export abstract class MessageResponse<CommandType extends BaseCommand, CallbackD
   abstract edit(ctx: EditMessageContext<CommandType, CallbackData, UserData>): Promise<Message>;
   abstract send(ctx: SendMessageContext<CommandType, CallbackData, UserData>): Promise<Message>;
 
-  getReplyMarkup = async (
+  getInlineKeyboardReplyMarkup = async (
     bot: TelegramBot<CommandType, CallbackData, UserData>,
   ): Promise<InlineKeyboardMarkup | undefined> => {
+    if (isArray(this.replyMarkup)) {
+      return await prepareInlineKeyboard(bot.callbackDataProvider, this.replyMarkup);
+    }
+
+    return this.replyMarkup && 'inline_keyboard' in this.replyMarkup ? this.replyMarkup : undefined;
+  };
+
+  getReplyMarkup = async (
+    bot: TelegramBot<CommandType, CallbackData, UserData>,
+  ): Promise<InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | ForceReply | undefined> => {
     return (
       this.replyMarkup &&
       (isArray(this.replyMarkup)
         ? await prepareInlineKeyboard(bot.callbackDataProvider, this.replyMarkup)
-        : this.replyMarkup)
+        : this.replyMarkup instanceof ReplyKeyboard
+          ? this.replyMarkup.getMarkup()
+          : this.replyMarkup)
     );
   };
 
