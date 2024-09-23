@@ -75,6 +75,19 @@ export type MessageResponseVideoNoteContent = {
 
 // TODO: add paid media content
 // TODO: add media group content
+// TODO: add location content
+// TODO: add venue content
+
+export type MessageResponseContactContent = {
+  type: 'contact';
+  phoneNumber: string;
+  firstName: string;
+  lastName?: string;
+  vcard?: string;
+};
+
+// TODO: add poll content
+// TODO: add dice content
 
 export type MessageResponseStickerContent = {
   type: 'sticker';
@@ -89,6 +102,7 @@ export type MessageResponseContent =
   | MessageResponseVideoContent
   | MessageResponseVoiceContent
   | MessageResponseVideoNoteContent
+  | MessageResponseContactContent
   | MessageResponseStickerContent;
 
 export type ImmediateMessageResponseOptions<CallbackData> = MessageResponseOptions<CallbackData> & {
@@ -288,6 +302,16 @@ export class ImmediateMessageResponse<
         duration: content.duration,
         length: content.length,
         thumbnail: content.thumbnail,
+      });
+    }
+
+    if (content.type === 'contact') {
+      return ctx.bot.api.sendContact({
+        ...sendBasicOptions,
+        phone_number: content.phoneNumber,
+        first_name: content.firstName,
+        last_name: content.lastName,
+        vcard: content.vcard,
       });
     }
 

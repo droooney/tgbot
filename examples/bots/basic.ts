@@ -23,6 +23,7 @@ const commands = {
   '/video': 'Video',
   '/voice': 'Voice',
   '/video_note': 'Video note',
+  '/contact': 'Contact',
   '/sticker': 'Sticker',
   '/reaction': 'Random reaction',
   '/notification_showcase': 'Notification showcase',
@@ -275,6 +276,17 @@ blockquote row 9`,
             thumbnail: fs.createReadStream(path.resolve('./examples/assets/thumb1.png')),
           },
         }),
+    });
+  });
+
+  bot.handleCommand('/contact', async () => {
+    return new ImmediateMessageResponse({
+      content: {
+        type: 'contact',
+        phoneNumber: '+71234567890',
+        firstName: 'Jimmy',
+        lastName: 'Baxter',
+      },
     });
   });
 
