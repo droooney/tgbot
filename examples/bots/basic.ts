@@ -24,6 +24,7 @@ const commands = {
   '/voice': 'Voice',
   '/video_note': 'Video note',
   '/contact': 'Contact',
+  '/dice': 'Dice',
   '/sticker': 'Sticker',
   '/reaction': 'Random reaction',
   '/notification_showcase': 'Notification showcase',
@@ -44,6 +45,7 @@ type CallbackData =
 const ImmediateMessageResponse = LibImmediateMessageResponse<BotCommand, CallbackData>;
 
 const reactionsPool = ['👍', '👎', '❤', '🔥', '🥰', '👏', '😁', '🤔', '🤯', '😱', '🤬', '😢', '🎉'] as const;
+const dicePool = ['🎲', '🎯', '🏀', '⚽', '🎳', '🎰'] as const;
 
 const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
   const callbackDataProvider = new StringCallbackDataProvider<BotCommand, CallbackData>();
@@ -290,6 +292,15 @@ blockquote row 9`,
     });
   });
 
+  bot.handleCommand('/dice', async () => {
+    return new ImmediateMessageResponse({
+      content: {
+        type: 'dice',
+        emoji: dicePool[Math.floor(Math.random() * dicePool.length)],
+      },
+    });
+  });
+
   bot.handleCommand('/sticker', async () => {
     return new ImmediateMessageResponse({
       content: {
@@ -300,12 +311,10 @@ blockquote row 9`,
   });
 
   bot.handleCommand('/reaction', async () => {
-    const randomEmoji = reactionsPool[Math.floor(Math.random() * reactionsPool.length)];
-
     return new MessageReactionResponse({
       reaction: {
         type: 'emoji',
-        emoji: randomEmoji,
+        emoji: reactionsPool[Math.floor(Math.random() * reactionsPool.length)],
       },
     });
   });

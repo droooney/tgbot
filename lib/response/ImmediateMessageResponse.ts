@@ -86,6 +86,12 @@ export type MessageResponseContactContent = {
   vcard?: string;
 };
 
+export type MessageResponseDiceContent = {
+  type: 'dice';
+  // FIXME: don't hardcode after typings are fixed
+  emoji?: '🎲' | '🎯' | '🏀' | '⚽' | '🎳' | '🎰';
+};
+
 // TODO: add poll content
 // TODO: add dice content
 
@@ -103,6 +109,7 @@ export type MessageResponseContent =
   | MessageResponseVoiceContent
   | MessageResponseVideoNoteContent
   | MessageResponseContactContent
+  | MessageResponseDiceContent
   | MessageResponseStickerContent;
 
 export type ImmediateMessageResponseOptions<CallbackData> = MessageResponseOptions<CallbackData> & {
@@ -312,6 +319,13 @@ export class ImmediateMessageResponse<
         first_name: content.firstName,
         last_name: content.lastName,
         vcard: content.vcard,
+      });
+    }
+
+    if (content.type === 'dice') {
+      return ctx.bot.api.sendDice({
+        ...sendBasicOptions,
+        emoji: content.emoji,
       });
     }
 
