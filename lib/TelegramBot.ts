@@ -148,6 +148,9 @@ export class TelegramBot<
     return this;
   }
 
+  // TODO: add handleMessage (callback: MessageCallback)
+  // TODO: add handleText (match: string | string[] | RegExp, callback: MessageCallback)
+
   isUserAllowed(user: User): boolean {
     return Boolean(user.username && (!this.usernameWhitelist || this.usernameWhitelist.includes(user.username)));
   }

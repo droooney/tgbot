@@ -51,7 +51,7 @@ export type ReplyKeyboardButton =
   | WebAppReplyKeyboardButton;
 
 export type ReplyKeyboardOptions = {
-  buttons: ((ReplyKeyboardButton | null | undefined | false | '')[] | null | undefined | false | '')[];
+  buttons: ((ReplyKeyboardButton | null | undefined | false | string)[] | null | undefined | false | '')[];
   isPersistent?: boolean;
   resize?: boolean;
   oneTime?: boolean;
@@ -70,7 +70,11 @@ export class ReplyKeyboard {
   constructor(options: ReplyKeyboardOptions) {
     this.buttons = options.buttons
       .filter(isTruthy)
-      .map((row) => row.filter(isTruthy))
+      .map((row) =>
+        row
+          .filter(isTruthy)
+          .map((button) => (typeof button === 'string' ? ({ type: 'text', text: button } as const) : button)),
+      )
       .filter((row) => row.length > 0);
     this.isPersistent = options.isPersistent;
     this.resize = options.resize;
