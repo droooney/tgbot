@@ -3,6 +3,7 @@ import path from 'node:path';
 import { performance } from 'node:perf_hooks';
 
 import {
+  ActionsStreamAction,
   GeoPoint,
   MessageAction as LibMessageAction,
   Markdown,
@@ -12,6 +13,7 @@ import {
   TelegramBot,
   WaitingAction,
 } from '../../lib';
+import { delay } from '../../lib/utils/promise';
 import { CreateBot } from '../runExample';
 
 const commands = {
@@ -589,16 +591,11 @@ blockquote row 9`,
     });
   });
 
-  callbackDataProvider.handle('startMoving', async ({ message }) => {
-    const start = performance.now();
-
-    const interval = setInterval(async () => {
-      const newPoint = getCurrentCoord(performance.now() - start);
-
-      await new MessageAction({
+  callbackDataProvider.handle('startMoving', async () => {
+    return new ActionsStreamAction(async function* () {
+      yield new MessageAction({
         content: {
-          type: 'location',
-          point: newPoint,
+          type: 'unmodified',
         },
         replyMarkup: [
           [
@@ -609,42 +606,45 @@ blockquote row 9`,
             },
           ],
         ],
-      }).edit({
-        bot,
-        message,
       });
 
-      if (
-        Math.abs(newPoint.latitude - liveEndCoord.latitude) < Number.EPSILON &&
-        Math.abs(newPoint.longitude - liveEndCoord.longitude) < Number.EPSILON
-      ) {
-        clearInterval(interval);
+      const start = performance.now();
 
-        await new MessageAction({
+      while (true) {
+        await delay(5000);
+
+        const newPoint = getCurrentCoord(performance.now() - start);
+
+        yield new MessageAction({
           content: {
             type: 'location',
-            point: null,
+            point: newPoint,
           },
-        }).edit({
-          bot,
-          message,
+          replyMarkup: [
+            [
+              {
+                type: 'callbackData',
+                text: 'Stop moving',
+                callbackData: 'stopMoving',
+              },
+            ],
+          ],
         });
-      }
-    }, 5000);
 
-    return new MessageAction({
-      content: {
-        type: 'unmodified',
-      },
-      replyMarkup: [
-        [
-          {
-            type: 'callbackData',
-            text: 'Stop moving',
-            callbackData: 'stopMoving',
-          },
-        ],
-      ],
+        if (
+          Math.abs(newPoint.latitude - liveEndCoord.latitude) < Number.EPSILON &&
+          Math.abs(newPoint.longitude - liveEndCoord.longitude) < Number.EPSILON
+        ) {
+          yield new MessageAction({
+            content: {
+              type: 'location',
+              point: null,
+            },
+          });
+
+          break;
+        }
+      }
     });
   });
 

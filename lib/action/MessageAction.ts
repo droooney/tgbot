@@ -232,8 +232,11 @@ export type MessageActionContent =
   | MessageActionStickerContent
   | MessageActionUnmodifiedContent;
 
+export type MessageActionMode = 'linked' | 'separate';
+
 export type MessageActionOptions<CallbackData> = {
   content: MessageActionContent;
+  mode?: MessageActionMode;
   businessConnectionId?: string;
   disableNotification?: boolean;
   replyMarkup?: ReplyMarkup<CallbackData>;
@@ -248,6 +251,7 @@ export class MessageAction<CommandType extends BaseCommand = never, CallbackData
 {
   /* eslint-enable brace-style */
   readonly content: MessageActionContent;
+  readonly mode: MessageActionMode;
   readonly businessConnectionId?: string;
   readonly disableNotification?: boolean;
   readonly replyMarkup?: ReplyMarkup<CallbackData>;
@@ -257,6 +261,7 @@ export class MessageAction<CommandType extends BaseCommand = never, CallbackData
 
   constructor(options: MessageActionOptions<CallbackData>) {
     this.content = options.content;
+    this.mode = options.mode ?? 'linked';
     this.businessConnectionId = options?.businessConnectionId;
     this.disableNotification = options?.disableNotification;
     this.replyMarkup = options?.replyMarkup;
@@ -423,10 +428,18 @@ export class MessageAction<CommandType extends BaseCommand = never, CallbackData
     }
 
     try {
-      await this.edit({
-        message,
-        bot: ctx.bot,
-      });
+      if (this.mode === 'separate') {
+        await this.send({
+          bot: ctx.bot,
+          chatId: message.chat.id,
+          messageThreadId: 'message_thread_id' in message ? message.message_thread_id : undefined,
+        });
+      } else {
+        await this.edit({
+          bot: ctx.bot,
+          message,
+        });
+      }
     } catch (err) {
       if (err instanceof TelegramBotError && err.code === TelegramBotErrorCode.EditSameContent) {
         await ctx.bot.api.answerCallbackQuery({
@@ -443,10 +456,13 @@ export class MessageAction<CommandType extends BaseCommand = never, CallbackData
       bot: ctx.bot,
       chatId: ctx.message.chat.id,
       messageThreadId: ctx.message.message_thread_id,
-      replyParameters: {
-        message_id: ctx.message.message_id,
-        chat_id: ctx.message.chat.id,
-      },
+      replyParameters:
+        this.mode === 'separate'
+          ? undefined
+          : {
+              message_id: ctx.message.message_id,
+              chat_id: ctx.message.chat.id,
+            },
     });
   }
 

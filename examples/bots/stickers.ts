@@ -4,9 +4,9 @@ import path from 'node:path';
 import { z } from 'zod';
 
 import {
+  ActionsStreamAction,
   JsonCallbackDataProvider,
   MessageAction as LibMessageAction,
-  MessagesAction,
   TelegramBot,
   WaitingAction,
 } from '../../lib';
@@ -79,14 +79,8 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
           ],
         });
 
-        const stickerSet = await bot.api.getStickerSet({
-          name,
-        });
-
-        const sticker = stickerSet.stickers.at(0)?.file_id;
-
-        return new MessagesAction([
-          new MessageAction({
+        return new ActionsStreamAction(async function* () {
+          yield new MessageAction({
             content: {
               type: 'text',
               text: 'Set created',
@@ -103,15 +97,24 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
                 },
               ],
             ],
-          }),
-          sticker &&
-            new MessageAction({
+          });
+
+          const stickerSet = await bot.api.getStickerSet({
+            name,
+          });
+
+          const sticker = stickerSet.stickers.at(0)?.file_id;
+
+          if (sticker) {
+            yield new MessageAction({
+              mode: 'separate',
               content: {
                 type: 'sticker',
                 sticker,
               },
-            }),
-        ]);
+            });
+          }
+        });
       },
     });
   });
