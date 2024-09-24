@@ -158,7 +158,29 @@ export type MessageActionDiceContent = {
   emoji?: '🎲' | '🎯' | '🏀' | '⚽' | '🎳' | '🎰';
 };
 
-// TODO: add poll content
+export type InputPollOption =
+  | string
+  | Markdown
+  | {
+      text: string | Markdown;
+      parseMode?: ParseMode;
+    };
+
+export type MessageActionPollContent = {
+  type: 'poll';
+  pollType?: 'quiz' | 'regular';
+  question: string | Markdown;
+  questionParseMode?: ParseMode;
+  options: InputPollOption[];
+  isAnonymous?: boolean;
+  allowsMultipleAnswers?: boolean;
+  correctOptionId?: number;
+  explanation?: string | Markdown;
+  explanationParseMode?: ParseMode;
+  openPeriod?: number;
+  closeDate?: number | Date;
+  isClosed?: boolean;
+};
 
 export type MessageActionStickerContent = {
   type: 'sticker';
@@ -178,6 +200,7 @@ export type MessageActionContent =
   | MessageActionMediaGroupContent
   | MessageActionContactContent
   | MessageActionDiceContent
+  | MessageActionPollContent
   | MessageActionStickerContent;
 
 export type MessageActionOptions<CallbackData> = {
@@ -537,6 +560,43 @@ export class MessageAction<CommandType extends BaseCommand = never, CallbackData
         await ctx.bot.api.sendDice({
           ...sendBasicOptions,
           emoji: content.emoji,
+        }),
+      ];
+    }
+
+    if (content.type === 'poll') {
+      return [
+        await ctx.bot.api.sendPoll({
+          ...sendBasicOptions,
+          question: content.question.toString(),
+          question_parse_mode: content.question instanceof Markdown ? 'MarkdownV2' : content.questionParseMode,
+          options: content.options.map((option) => {
+            const text = typeof option === 'string' || option instanceof Markdown ? option : option.text;
+
+            return {
+              text: text.toString(),
+              text_parse_mode:
+                text instanceof Markdown
+                  ? 'MarkdownV2'
+                  : typeof option === 'object' && !(option instanceof Markdown)
+                    ? option.parseMode
+                    : undefined,
+            };
+          }),
+          is_anonymous: content.isAnonymous,
+          type: content.pollType,
+          allows_multiple_answers: content.allowsMultipleAnswers,
+          correct_option_id: content.correctOptionId,
+          explanation: content.explanation?.toString(),
+          explanation_parse_mode: content.explanation instanceof Markdown ? 'MarkdownV2' : content.explanationParseMode,
+          open_period: typeof content.openPeriod === 'number' ? content.openPeriod / 1000 : undefined,
+          close_date:
+            content.closeDate instanceof Date
+              ? Math.floor(content.closeDate.valueOf() / 1000)
+              : typeof content.closeDate === 'number'
+                ? content.closeDate / 1000
+                : undefined,
+          is_closed: content.isClosed,
         }),
       ];
     }

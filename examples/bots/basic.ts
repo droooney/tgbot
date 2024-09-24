@@ -14,7 +14,7 @@ import { CreateBot } from '../runExample';
 
 const commands = {
   '/start': undefined,
-  '/simple': 'Simple text response',
+  '/simple': 'Simple text',
   '/markdown': 'Markdown',
   '/photo': 'Photo',
   '/audio': 'Audio',
@@ -28,6 +28,8 @@ const commands = {
   '/media_group': 'Media group',
   '/contact': 'Contact',
   '/dice': 'Dice',
+  '/poll': 'Poll',
+  '/quiz': 'Quiz',
   '/sticker': 'Sticker',
   '/reaction': 'Random reaction',
   '/notification_showcase': 'Notification showcase',
@@ -368,6 +370,30 @@ blockquote row 9`,
     });
   });
 
+  bot.handleCommand('/poll', async () => {
+    return new MessageAction({
+      content: {
+        type: 'poll',
+        question: 'How are you feeling?',
+        options: ['Good!', 'Very good!'],
+        openPeriod: 20 * 1000,
+      },
+    });
+  });
+
+  bot.handleCommand('/quiz', async () => {
+    return new MessageAction({
+      content: {
+        type: 'poll',
+        pollType: 'quiz',
+        question: 'What is 2 * 2?',
+        options: ['4', '5'],
+        correctOptionId: 0,
+        explanation: 'Everyone knows that 2 * 2 = 4',
+      },
+    });
+  });
+
   bot.handleCommand('/sticker', async () => {
     return new MessageAction({
       content: {
@@ -383,6 +409,7 @@ blockquote row 9`,
         type: 'emoji',
         emoji: reactionsPool[Math.floor(Math.random() * reactionsPool.length)],
       },
+      isBig: Math.random() < 0.5,
     });
   });
 
