@@ -1,4 +1,4 @@
-import { ReplyKeyboardMarkup } from 'typescript-telegram-bot-api/dist/types';
+import { ChatAdministratorRights, ReplyKeyboardMarkup } from 'typescript-telegram-bot-api/dist/types';
 import { KeyboardButton } from 'typescript-telegram-bot-api/dist/types/KeyboardButton';
 
 import { isTruthy } from './utils/is';
@@ -22,7 +22,20 @@ export type RequestUsersReplyKeyboardButton = BaseReplyKeyboardButton & {
   requestPhoto?: boolean;
 };
 
-// TODO: request chat button
+export type RequestChatReplyKeyboardButton = BaseReplyKeyboardButton & {
+  type: 'requestChat';
+  requestId: number;
+  isChannel: boolean;
+  isForum?: boolean;
+  hasUsername?: boolean;
+  isCreated?: boolean;
+  userAdministratorRights?: Partial<ChatAdministratorRights>;
+  botAdministratorRights?: Partial<ChatAdministratorRights>;
+  botIsMember?: boolean;
+  requestTitle?: boolean;
+  requestUsername?: boolean;
+  requestPhoto?: boolean;
+};
 
 export type RequestContactReplyKeyboardButton = BaseReplyKeyboardButton & {
   type: 'requestContact';
@@ -45,6 +58,7 @@ export type WebAppReplyKeyboardButton = BaseReplyKeyboardButton & {
 export type ReplyKeyboardButton =
   | TextReplyKeyboardButton
   | RequestUsersReplyKeyboardButton
+  | RequestChatReplyKeyboardButton
   | RequestContactReplyKeyboardButton
   | RequestLocationReplyKeyboardButton
   | RequestPollReplyKeyboardButton
@@ -97,6 +111,30 @@ export class ReplyKeyboard {
                 max_quantity: button.maxQuantity,
                 // FIXME: remove when typings are fixed
                 request_name: button.requestName as never,
+                // FIXME: remove when typings are fixed
+                request_username: button.requestUsername as never,
+                // FIXME: remove when typings are fixed
+                request_photo: button.requestPhoto as never,
+              },
+            };
+          }
+
+          if (button.type === 'requestChat') {
+            return {
+              text: button.text,
+              request_chat: {
+                request_id: button.requestId,
+                chat_is_channel: button.isChannel,
+                chat_is_forum: button.isForum,
+                chat_has_username: button.hasUsername,
+                chat_is_created: button.isCreated,
+                // FIXME: remove when typings are fixed
+                user_administrator_rights: button.userAdministratorRights as never,
+                // FIXME: remove when typings are fixed
+                bot_administrator_rights: button.botAdministratorRights as never,
+                bot_is_member: button.botIsMember,
+                // FIXME: remove when typings are fixed
+                request_title: button.requestTitle as never,
                 // FIXME: remove when typings are fixed
                 request_username: button.requestUsername as never,
                 // FIXME: remove when typings are fixed

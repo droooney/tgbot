@@ -76,6 +76,18 @@ const replyKeyboard = new ReplyKeyboard({
         requestName: true,
       },
     ],
+    [
+      {
+        type: 'requestChat',
+        text: 'Send chat',
+        requestId: 2,
+        isChannel: false,
+        requestTitle: true,
+        userAdministratorRights: {
+          can_manage_chat: true,
+        },
+      },
+    ],
   ],
   resize: true,
 });
@@ -118,6 +130,15 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
           users.map(({ user_id, first_name }) => Markdown.telegramUser(user_id, first_name ?? `user${user_id}`)),
           ', ',
         )}`,
+      },
+    });
+  });
+
+  bot.handleChatShared(async ({ chatShared: { chat_id, title } }) => {
+    return new ImmediateMessageResponse({
+      content: {
+        type: 'text',
+        text: `You've shared chat (#${chat_id}) with title ${JSON.stringify(title)}`,
       },
     });
   });

@@ -107,10 +107,6 @@ export type CallbackQueryHandler<
 
 export type BaseCommand = `/${string}`;
 
-export type SendMessageOptions = {
-  replyParameters?: ReplyParameters;
-};
-
 export type TelegramBotEvents = {
   responseError: [err: unknown];
 };
@@ -169,14 +165,14 @@ export class TelegramBot<
     return this;
   }
 
+  // TODO: add handleMessage (callback: MessageCallback)
+  // TODO: add handleText (match: string | string[] | RegExp, callback: MessageCallback)
+
   handleUsersShared(handler: UsersSharedHandler<CommandType, CallbackData, UserData>): this {
     this._usersSharedHandler = handler;
 
     return this;
   }
-
-  // TODO: add handleMessage (callback: MessageCallback)
-  // TODO: add handleText (match: string | string[] | RegExp, callback: MessageCallback)
 
   isUserAllowed(user: User): boolean {
     return Boolean(user.username && (!this.usernameWhitelist || this.usernameWhitelist.includes(user.username)));
