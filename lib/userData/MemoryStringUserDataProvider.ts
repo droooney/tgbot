@@ -21,7 +21,7 @@ export class MemoryStringUserDataProvider<
     this._getDefaultValue = typeof defaultValue === 'string' ? () => defaultValue : defaultValue;
   }
 
-  getOrCreateUserData = (userId: number): MaybePromise<UserData> => {
+  getOrCreateUserData(userId: number): MaybePromise<UserData> {
     return this._getDefaultValue(userId);
-  };
+  }
 }

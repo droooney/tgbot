@@ -10,11 +10,11 @@ export class StringCallbackDataProvider<
     [Data in CallbackData]?: CallbackQueryHandler<CommandType, CallbackData, UserData, Data>;
   } = {};
 
-  getCallbackQueryHandler = <Data extends CallbackData>(
+  getCallbackQueryHandler<Data extends CallbackData>(
     data: Data,
-  ): CallbackQueryHandler<CommandType, CallbackData, UserData, Data> | null => {
+  ): CallbackQueryHandler<CommandType, CallbackData, UserData, Data> | null {
     return this._handlers[data] ?? null;
-  };
+  }
 
   // TODO: add support for regex
   handle<Data extends CallbackData>(
@@ -28,11 +28,11 @@ export class StringCallbackDataProvider<
     return this;
   }
 
-  parseCallbackData = (dataString: string): CallbackData | null => {
+  parseCallbackData(dataString: string): CallbackData | null {
     return dataString as CallbackData;
-  };
+  }
 
-  stringifyData = (data: CallbackData): string => {
+  stringifyData(data: CallbackData): string {
     return data;
-  };
+  }
 }

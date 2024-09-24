@@ -40,15 +40,15 @@ export class JsonCallbackDataProvider<
     this._parseJson = options.parseJson ?? JSON.parse;
   }
 
-  getCallbackQueryHandler = <Data extends CallbackData>(
+  getCallbackQueryHandler<Data extends CallbackData>(
     data: Data,
-  ): CallbackQueryHandler<CommandType, CallbackData, UserData, Data> | null => {
+  ): CallbackQueryHandler<CommandType, CallbackData, UserData, Data> | null {
     return (
       (this._handlers[data.type as Data['type']] as
         | CallbackQueryHandler<CommandType, CallbackData, UserData, Data>
         | undefined) ?? null
     );
-  };
+  }
 
   handle<Type extends CallbackData['type']>(
     type: Type | Type[],
@@ -61,7 +61,7 @@ export class JsonCallbackDataProvider<
     return this;
   }
 
-  parseCallbackData = (dataString: string): CallbackData | null => {
+  parseCallbackData(dataString: string): CallbackData | null {
     let data: CallbackData;
 
     try {
@@ -71,9 +71,9 @@ export class JsonCallbackDataProvider<
     }
 
     return data;
-  };
+  }
 
-  stringifyData = (data: CallbackData): string => {
+  stringifyData(data: CallbackData): string {
     return JSON.stringify(data);
-  };
+  }
 }

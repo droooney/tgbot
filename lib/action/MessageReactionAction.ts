@@ -2,34 +2,32 @@ import { ReactionType } from 'typescript-telegram-bot-api/dist/types';
 
 import { BaseCommand } from '../TelegramBot';
 import { isArray } from '../utils/is';
-import { RespondToMessageContext, Response } from './Response';
+import { Action, ActionOnMessageContext } from './Action';
 
-export type MessageReactionResponseOptions = {
+export type MessageReactionActionOptions = {
   reaction?: ReactionType | ReactionType[];
   isBig?: boolean;
 };
 
-export class MessageReactionResponse<
-  CommandType extends BaseCommand = never,
-  CallbackData = never,
-  UserData = never,
-> extends Response<CommandType, CallbackData, UserData> {
+/* eslint-disable brace-style */
+export class MessageReactionAction<CommandType extends BaseCommand = never, CallbackData = never, UserData = never>
+  implements Action<CommandType, CallbackData, UserData>
+{
+  /* eslint-enable brace-style */
   readonly reaction?: ReactionType[];
   readonly isBig?: boolean;
 
-  constructor(options?: MessageReactionResponseOptions) {
-    super();
-
+  constructor(options?: MessageReactionActionOptions) {
     this.reaction = options?.reaction ? (isArray(options.reaction) ? options.reaction : [options.reaction]) : undefined;
     this.isBig = options?.isBig;
   }
 
-  respondToMessage = async (ctx: RespondToMessageContext<CommandType, CallbackData, UserData>): Promise<void> => {
+  async onMessage(ctx: ActionOnMessageContext<CommandType, CallbackData, UserData>): Promise<void> {
     await ctx.bot.api.setMessageReaction({
       chat_id: ctx.message.chat.id,
       message_id: ctx.message.message_id,
       reaction: this.reaction,
       is_big: this.isBig,
     });
-  };
+  }
 }

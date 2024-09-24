@@ -2,13 +2,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import {
-  ChatActionResponse,
-  ImmediateMessageResponse as LibImmediateMessageResponse,
+  MessageAction as LibMessageAction,
   Markdown,
-  MessageReactionResponse,
-  NotificationResponse,
+  MessageReactionAction,
+  NotificationAction,
   StringCallbackDataProvider,
   TelegramBot,
+  WaitingAction,
 } from '../../lib';
 import { CreateBot } from '../runExample';
 
@@ -42,7 +42,7 @@ type CallbackData =
   | 'responseWithNotification'
   | 'responseWithNotificationAlert';
 
-const ImmediateMessageResponse = LibImmediateMessageResponse<BotCommand, CallbackData>;
+const MessageAction = LibMessageAction<BotCommand, CallbackData>;
 
 const reactionsPool = ['👍', '👎', '❤', '🔥', '🥰', '👏', '😁', '🤔', '🤯', '😱', '🤬', '😢', '🎉'] as const;
 const dicePool = ['🎲', '🎯', '🏀', '⚽', '🎳', '🎰'] as const;
@@ -56,7 +56,7 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
   });
 
   bot.handleCommand('/start', async () => {
-    return new ImmediateMessageResponse({
+    return new MessageAction({
       content: {
         type: 'text',
         text: 'Hi',
@@ -65,7 +65,7 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
   });
 
   bot.handleCommand('/simple', async () => {
-    return new ImmediateMessageResponse({
+    return new MessageAction({
       content: {
         type: 'text',
         text: 'Simple text response',
@@ -83,7 +83,7 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
   });
 
   bot.handleCommand('/markdown', async () => {
-    return new ImmediateMessageResponse({
+    return new MessageAction({
       content: {
         type: 'text',
         text: Markdown.create`plain text
@@ -154,7 +154,7 @@ blockquote row 9`,
   });
 
   bot.handleCommand('/photo', async () => {
-    return new ImmediateMessageResponse({
+    return new MessageAction({
       content: {
         type: 'photo',
         photo: fs.createReadStream(path.resolve('./examples/assets/house.png')),
@@ -173,7 +173,7 @@ blockquote row 9`,
   });
 
   bot.handleCommand('/audio', async () => {
-    return new ImmediateMessageResponse({
+    return new MessageAction({
       content: {
         type: 'audio',
         audio: fs.createReadStream(path.resolve('./examples/assets/audio1.mp3')),
@@ -195,7 +195,7 @@ blockquote row 9`,
   });
 
   bot.handleCommand('/document', async () => {
-    return new ImmediateMessageResponse({
+    return new MessageAction({
       content: {
         type: 'document',
         document: fs.createReadStream(path.resolve('./examples/assets/file1.txt')),
@@ -221,10 +221,10 @@ blockquote row 9`,
   });
 
   bot.handleCommand('/large_document', async () => {
-    return new ChatActionResponse({
+    return new WaitingAction({
       type: 'upload_document',
-      getResponse: () =>
-        new ImmediateMessageResponse({
+      getAction: () =>
+        new MessageAction({
           content: {
             type: 'document',
             document: fs.createReadStream(path.resolve('./examples/assets/video0.mp4')),
@@ -234,10 +234,10 @@ blockquote row 9`,
   });
 
   bot.handleCommand('/video', async () => {
-    return new ChatActionResponse({
+    return new WaitingAction({
       type: 'upload_video',
-      getResponse: () =>
-        new ImmediateMessageResponse({
+      getAction: () =>
+        new MessageAction({
           content: {
             type: 'video',
             video: fs.createReadStream(path.resolve('./examples/assets/video1.mp4')),
@@ -258,7 +258,7 @@ blockquote row 9`,
   });
 
   bot.handleCommand('/voice', async () => {
-    return new ImmediateMessageResponse({
+    return new MessageAction({
       content: {
         type: 'voice',
         voice: fs.createReadStream(path.resolve('./examples/assets/audio1.mp3')),
@@ -268,10 +268,10 @@ blockquote row 9`,
   });
 
   bot.handleCommand('/video_note', async () => {
-    return new ChatActionResponse({
+    return new WaitingAction({
       type: 'upload_video_note',
-      getResponse: () =>
-        new ImmediateMessageResponse({
+      getAction: () =>
+        new MessageAction({
           content: {
             type: 'videoNote',
             videoNote: fs.createReadStream(path.resolve('./examples/assets/video_note.mp4')),
@@ -282,7 +282,7 @@ blockquote row 9`,
   });
 
   bot.handleCommand('/contact', async () => {
-    return new ImmediateMessageResponse({
+    return new MessageAction({
       content: {
         type: 'contact',
         phoneNumber: '+71234567890',
@@ -293,7 +293,7 @@ blockquote row 9`,
   });
 
   bot.handleCommand('/dice', async () => {
-    return new ImmediateMessageResponse({
+    return new MessageAction({
       content: {
         type: 'dice',
         emoji: dicePool[Math.floor(Math.random() * dicePool.length)],
@@ -302,7 +302,7 @@ blockquote row 9`,
   });
 
   bot.handleCommand('/sticker', async () => {
-    return new ImmediateMessageResponse({
+    return new MessageAction({
       content: {
         type: 'sticker',
         sticker: 'CAACAgIAAxkBAAO8Zu4QdD3371GUb8FesINmN-A8pWcAAgEAA8A2TxMYLnMwqz8tUTYE',
@@ -311,7 +311,7 @@ blockquote row 9`,
   });
 
   bot.handleCommand('/reaction', async () => {
-    return new MessageReactionResponse({
+    return new MessageReactionAction({
       reaction: {
         type: 'emoji',
         emoji: reactionsPool[Math.floor(Math.random() * reactionsPool.length)],
@@ -320,7 +320,7 @@ blockquote row 9`,
   });
 
   bot.handleCommand('/notification_showcase', async () => {
-    return new ImmediateMessageResponse({
+    return new MessageAction({
       content: {
         type: 'text',
         text: 'Notification showcase',
@@ -345,7 +345,7 @@ blockquote row 9`,
   });
 
   callbackDataProvider.handle('editSimpleText', async () => {
-    return new ImmediateMessageResponse({
+    return new MessageAction({
       content: {
         type: 'text',
         text: 'edited text',
@@ -354,7 +354,7 @@ blockquote row 9`,
   });
 
   callbackDataProvider.handle(['editPhoto', 'editDocumentWithPhoto'], async () => {
-    return new ImmediateMessageResponse({
+    return new MessageAction({
       content: {
         type: 'photo',
         photo: fs.createReadStream(path.resolve('./examples/assets/house_heart.png')),
@@ -364,7 +364,7 @@ blockquote row 9`,
   });
 
   callbackDataProvider.handle('editAudio', async () => {
-    return new ImmediateMessageResponse({
+    return new MessageAction({
       content: {
         type: 'audio',
         audio: fs.createReadStream(path.resolve('./examples/assets/audio2.mp3')),
@@ -377,7 +377,7 @@ blockquote row 9`,
   });
 
   callbackDataProvider.handle('editDocument', async () => {
-    return new ImmediateMessageResponse({
+    return new MessageAction({
       content: {
         type: 'document',
         document: fs.createReadStream(path.resolve('./examples/assets/file2.txt')),
@@ -387,7 +387,7 @@ blockquote row 9`,
   });
 
   callbackDataProvider.handle('editVideo', async () => {
-    return new ImmediateMessageResponse({
+    return new MessageAction({
       content: {
         type: 'video',
         video: fs.createReadStream(path.resolve('./examples/assets/video2.mp4')),
@@ -398,13 +398,13 @@ blockquote row 9`,
   });
 
   callbackDataProvider.handle('responseWithNotification', async () => {
-    return new NotificationResponse({
+    return new NotificationAction({
       text: 'Notification response',
     });
   });
 
   callbackDataProvider.handle('responseWithNotificationAlert', async () => {
-    return new NotificationResponse({
+    return new NotificationAction({
       text: 'Alert response',
       showAlert: true,
     });

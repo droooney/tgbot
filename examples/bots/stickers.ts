@@ -4,11 +4,11 @@ import path from 'node:path';
 import { z } from 'zod';
 
 import {
-  ChatActionResponse,
   JsonCallbackDataProvider,
-  ImmediateMessageResponse as LibImmediateMessageResponse,
-  MultipleMessageResponse,
+  MessageAction as LibMessageAction,
+  MessagesAction,
   TelegramBot,
+  WaitingAction,
 } from '../../lib';
 import { CreateBot } from '../runExample';
 
@@ -25,7 +25,7 @@ const callbackData = z.object({
 
 type CallbackData = z.TypeOf<typeof callbackData>;
 
-const ImmediateMessageResponse = LibImmediateMessageResponse<BotCommand, CallbackData>;
+const MessageAction = LibMessageAction<BotCommand, CallbackData>;
 
 const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
   const callbackDataProvider = new JsonCallbackDataProvider<BotCommand, CallbackData>({
@@ -50,9 +50,9 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
       return;
     }
 
-    return new ChatActionResponse({
+    return new WaitingAction({
       type: 'choose_sticker',
-      getResponse: async () => {
+      getAction: async () => {
         const id = Math.random().toString().slice(2);
         const name = await getTestSetName(id);
 
@@ -85,8 +85,8 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
 
         const sticker = stickerSet.stickers.at(0)?.file_id;
 
-        return new MultipleMessageResponse([
-          new ImmediateMessageResponse({
+        return new MessagesAction([
+          new MessageAction({
             content: {
               type: 'text',
               text: 'Set created',
@@ -105,7 +105,7 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
             ],
           }),
           sticker &&
-            new ImmediateMessageResponse({
+            new MessageAction({
               content: {
                 type: 'sticker',
                 sticker,
@@ -121,7 +121,7 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
       name: await getTestSetName(id),
     });
 
-    return new ImmediateMessageResponse({
+    return new MessageAction({
       content: {
         type: 'text',
         text: 'Set deleted',

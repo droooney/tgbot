@@ -1,18 +1,57 @@
-import { InputFile, LinkPreviewOptions, Message, ParseMode } from 'typescript-telegram-bot-api/dist/types';
+import {
+  ForceReply,
+  InlineKeyboardMarkup,
+  InputFile,
+  LinkPreviewOptions,
+  Message,
+  ParseMode,
+  ReplyKeyboardMarkup,
+  ReplyKeyboardRemove,
+} from 'typescript-telegram-bot-api/dist/types';
+import { ReplyParameters } from 'typescript-telegram-bot-api/dist/types/ReplyParameters';
 
 import { Markdown } from '../Markdown';
-import { BaseCommand } from '../TelegramBot';
+import { ReplyKeyboard } from '../ReplyKeyboard';
+import { BaseCommand, TelegramBot } from '../TelegramBot';
 import { TelegramBotError, TelegramBotErrorCode } from '../TelegramBotError';
-import { EditMessageContext, MessageResponse, MessageResponseOptions, SendMessageContext } from './MessageResponse';
+import { InlineKeyboard } from '../inlineKeyboard';
+import { prepareInlineKeyboard } from '../utils/inlineKeyboard';
+import { isArray } from '../utils/is';
+import { Action, ActionOnCallbackQueryContext, ActionOnMessageContext } from './Action';
 
-export type MessageResponseTextContent = {
+export type EditMessageContext<CommandType extends BaseCommand, CallbackData, UserData> = {
+  bot: TelegramBot<CommandType, CallbackData, UserData>;
+  message: Message;
+};
+
+export type SendMessageContext<CommandType extends BaseCommand, CallbackData, UserData> = {
+  bot: TelegramBot<CommandType, CallbackData, UserData>;
+  chatId: number;
+  businessConnectionId?: string;
+  messageThreadId?: number;
+  replyParameters?: ReplyParameters;
+  disableNotification?: boolean;
+  protectContent?: boolean;
+  allowSendingWithoutReply?: boolean;
+  messageEffectId?: string;
+};
+
+export type ReplyMarkup<CallbackData> =
+  | InlineKeyboard<CallbackData>
+  | ReplyKeyboard
+  | InlineKeyboardMarkup
+  | ReplyKeyboardMarkup
+  | ReplyKeyboardRemove
+  | ForceReply;
+
+export type MessageActionTextContent = {
   type: 'text';
   text: string | Markdown;
   parseMode?: ParseMode;
   linkPreviewOptions?: LinkPreviewOptions;
 };
 
-export type MessageResponsePhotoContent = {
+export type MessageActionPhotoContent = {
   type: 'photo';
   photo: InputFile | string;
   text?: string | Markdown;
@@ -21,7 +60,7 @@ export type MessageResponsePhotoContent = {
   hasSpoiler?: boolean;
 };
 
-export type MessageResponseAudioContent = {
+export type MessageActionAudioContent = {
   type: 'audio';
   audio: InputFile | string;
   duration?: number;
@@ -32,7 +71,7 @@ export type MessageResponseAudioContent = {
   parseMode?: ParseMode;
 };
 
-export type MessageResponseDocumentContent = {
+export type MessageActionDocumentContent = {
   type: 'document';
   document: InputFile | string;
   thumbnail?: InputFile | string;
@@ -41,7 +80,7 @@ export type MessageResponseDocumentContent = {
   disableContentTypeDetection?: boolean;
 };
 
-export type MessageResponseVideoContent = {
+export type MessageActionVideoContent = {
   type: 'video';
   video: InputFile | string;
   duration?: number;
@@ -57,7 +96,7 @@ export type MessageResponseVideoContent = {
 
 // TODO: animation content
 
-export type MessageResponseVoiceContent = {
+export type MessageActionVoiceContent = {
   type: 'voice';
   voice: InputFile | string;
   duration?: number;
@@ -65,7 +104,7 @@ export type MessageResponseVoiceContent = {
   parseMode?: ParseMode;
 };
 
-export type MessageResponseVideoNoteContent = {
+export type MessageActionVideoNoteContent = {
   type: 'videoNote';
   videoNote: InputFile | string;
   duration?: number;
@@ -78,7 +117,7 @@ export type MessageResponseVideoNoteContent = {
 // TODO: add location content
 // TODO: add venue content
 
-export type MessageResponseContactContent = {
+export type MessageActionContactContent = {
   type: 'contact';
   phoneNumber: string;
   firstName: string;
@@ -86,47 +125,62 @@ export type MessageResponseContactContent = {
   vcard?: string;
 };
 
-export type MessageResponseDiceContent = {
+export type MessageActionDiceContent = {
   type: 'dice';
   // FIXME: don't hardcode after typings are fixed
   emoji?: '🎲' | '🎯' | '🏀' | '⚽' | '🎳' | '🎰';
 };
 
 // TODO: add poll content
-// TODO: add dice content
 
-export type MessageResponseStickerContent = {
+export type MessageActionStickerContent = {
   type: 'sticker';
   sticker: InputFile | string;
 };
 
-export type MessageResponseContent =
-  | MessageResponseTextContent
-  | MessageResponsePhotoContent
-  | MessageResponseAudioContent
-  | MessageResponseDocumentContent
-  | MessageResponseVideoContent
-  | MessageResponseVoiceContent
-  | MessageResponseVideoNoteContent
-  | MessageResponseContactContent
-  | MessageResponseDiceContent
-  | MessageResponseStickerContent;
+export type MessageActionContent =
+  | MessageActionTextContent
+  | MessageActionPhotoContent
+  | MessageActionAudioContent
+  | MessageActionDocumentContent
+  | MessageActionVideoContent
+  | MessageActionVoiceContent
+  | MessageActionVideoNoteContent
+  | MessageActionContactContent
+  | MessageActionDiceContent
+  | MessageActionStickerContent;
 
-export type ImmediateMessageResponseOptions<CallbackData> = MessageResponseOptions<CallbackData> & {
-  content: MessageResponseContent;
+export type MessageActionOptions<CallbackData> = {
+  content: MessageActionContent;
+  businessConnectionId?: string;
+  disableNotification?: boolean;
+  replyMarkup?: ReplyMarkup<CallbackData>;
+  protectContent?: boolean;
+  allowSendingWithoutReply?: boolean;
+  messageEffectId?: string;
 };
 
-export class ImmediateMessageResponse<
-  CommandType extends BaseCommand = never,
-  CallbackData = never,
-  UserData = never,
-> extends MessageResponse<CommandType, CallbackData, UserData> {
-  readonly content: MessageResponseContent;
+/* eslint-disable brace-style */
+export class MessageAction<CommandType extends BaseCommand = never, CallbackData = never, UserData = never>
+  implements Action<CommandType, CallbackData, UserData>
+{
+  /* eslint-enable brace-style */
+  readonly content: MessageActionContent;
+  readonly businessConnectionId?: string;
+  readonly disableNotification?: boolean;
+  readonly replyMarkup?: ReplyMarkup<CallbackData>;
+  readonly protectContent?: boolean;
+  readonly allowSendingWithoutReply?: boolean;
+  readonly messageEffectId?: string;
 
-  constructor(options: ImmediateMessageResponseOptions<CallbackData>) {
-    super(options);
-
+  constructor(options: MessageActionOptions<CallbackData>) {
     this.content = options.content;
+    this.businessConnectionId = options?.businessConnectionId;
+    this.disableNotification = options?.disableNotification;
+    this.replyMarkup = options?.replyMarkup;
+    this.protectContent = options?.protectContent;
+    this.allowSendingWithoutReply = options?.allowSendingWithoutReply;
+    this.messageEffectId = options?.messageEffectId;
   }
 
   async edit(ctx: EditMessageContext<CommandType, CallbackData, UserData>): Promise<Message> {
@@ -215,6 +269,64 @@ export class ImmediateMessageResponse<
     }
 
     return editedMessage;
+  }
+
+  async getInlineKeyboardReplyMarkup(
+    bot: TelegramBot<CommandType, CallbackData, UserData>,
+  ): Promise<InlineKeyboardMarkup | undefined> {
+    if (isArray(this.replyMarkup)) {
+      return await prepareInlineKeyboard(bot.callbackDataProvider, this.replyMarkup);
+    }
+
+    return this.replyMarkup && 'inline_keyboard' in this.replyMarkup ? this.replyMarkup : undefined;
+  }
+
+  async getReplyMarkup(
+    bot: TelegramBot<CommandType, CallbackData, UserData>,
+  ): Promise<InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | ForceReply | undefined> {
+    return (
+      this.replyMarkup &&
+      (isArray(this.replyMarkup)
+        ? await prepareInlineKeyboard(bot.callbackDataProvider, this.replyMarkup)
+        : this.replyMarkup instanceof ReplyKeyboard
+          ? this.replyMarkup.getMarkup()
+          : this.replyMarkup)
+    );
+  }
+
+  async onCallbackQuery(ctx: ActionOnCallbackQueryContext<CommandType, CallbackData, UserData>): Promise<void> {
+    const { id: queryId, message } = ctx.query;
+
+    if (!message) {
+      return;
+    }
+
+    try {
+      await this.edit({
+        message,
+        bot: ctx.bot,
+      });
+    } catch (err) {
+      if (err instanceof TelegramBotError && err.code === TelegramBotErrorCode.EditSameContent) {
+        await ctx.bot.api.answerCallbackQuery({
+          callback_query_id: queryId,
+        });
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  async onMessage(ctx: ActionOnMessageContext<CommandType, CallbackData, UserData>): Promise<void> {
+    await this.send({
+      bot: ctx.bot,
+      chatId: ctx.message.chat.id,
+      messageThreadId: ctx.message.message_thread_id,
+      replyParameters: {
+        message_id: ctx.message.message_id,
+        chat_id: ctx.message.chat.id,
+      },
+    });
   }
 
   async send(ctx: SendMessageContext<CommandType, CallbackData, UserData>): Promise<Message> {

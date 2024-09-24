@@ -10,11 +10,11 @@ export abstract class StringUserDataProvider<
     [Data in UserData]?: MessageHandler<CommandType, CallbackData, UserData, Data>;
   } = {};
 
-  getUserDataHandler = <Data extends UserData>(
+  getUserDataHandler<Data extends UserData>(
     userData: Data,
-  ): MessageHandler<CommandType, CallbackData, UserData, Data> | null => {
+  ): MessageHandler<CommandType, CallbackData, UserData, Data> | null {
     return this._handlers[userData] ?? null;
-  };
+  }
 
   handle<Data extends UserData>(
     data: Data | Data[],

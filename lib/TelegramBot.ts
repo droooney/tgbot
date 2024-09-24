@@ -11,31 +11,31 @@ import {
 } from 'typescript-telegram-bot-api/dist/types';
 
 import { TelegramBotError, TelegramBotErrorCode } from './TelegramBotError';
+import { ActionOnCallbackQuery, ActionOnMessage } from './action';
 import { CallbackDataProvider } from './callbackData';
-import { ResponseToCallbackQuery, ResponseToMessage } from './response';
 import { MaybePromise } from './types';
 import { UserDataProvider } from './userData';
 import { prepareErrorForLogging } from './utils/error';
 import { isTruthy } from './utils/is';
 
-export type MessageErrorResponseContext = {
+export type MessageErrorActionContext = {
   err: unknown;
   message: Message;
 };
 
-export type GetMessageErrorResponse<CommandType extends BaseCommand, CallbackData, UserData> = (
-  ctx: MessageErrorResponseContext,
-) => MaybePromise<ResponseToMessage<CommandType, CallbackData, UserData> | null | undefined | void>;
+export type GetMessageErrorAction<CommandType extends BaseCommand, CallbackData, UserData> = (
+  ctx: MessageErrorActionContext,
+) => MaybePromise<ActionOnMessage<CommandType, CallbackData, UserData> | null | undefined | void>;
 
-export type CallbackQueryErrorResponseContext = {
+export type CallbackQueryErrorActionContext = {
   err: unknown;
   message: Message;
   query: CallbackQuery;
 };
 
-export type GetCallbackQueryErrorResponse<CommandType extends BaseCommand, CallbackData, UserData> = (
-  ctx: CallbackQueryErrorResponseContext,
-) => MaybePromise<ResponseToCallbackQuery<CommandType, CallbackData, UserData> | null | undefined | void>;
+export type GetCallbackQueryErrorAction<CommandType extends BaseCommand, CallbackData, UserData> = (
+  ctx: CallbackQueryErrorActionContext,
+) => MaybePromise<ActionOnCallbackQuery<CommandType, CallbackData, UserData> | null | undefined | void>;
 
 export type UsersSharedHandlerContext = {
   usersShared: UsersShared;
@@ -43,7 +43,7 @@ export type UsersSharedHandlerContext = {
 
 export type UsersSharedHandler<in out CommandType extends BaseCommand, in out CallbackData, in out UserData> = (
   ctx: UsersSharedHandlerContext,
-) => MaybePromise<ResponseToMessage<CommandType, CallbackData, UserData> | null | undefined | void>;
+) => MaybePromise<ActionOnMessage<CommandType, CallbackData, UserData> | null | undefined | void>;
 
 export type ChatSharedHandlerContext = {
   chatShared: ChatShared;
@@ -51,7 +51,7 @@ export type ChatSharedHandlerContext = {
 
 export type ChatSharedHandler<in out CommandType extends BaseCommand, in out CallbackData, in out UserData> = (
   ctx: ChatSharedHandlerContext,
-) => MaybePromise<ResponseToMessage<CommandType, CallbackData, UserData> | null | undefined | void>;
+) => MaybePromise<ActionOnMessage<CommandType, CallbackData, UserData> | null | undefined | void>;
 
 export type BotCommands<CommandType extends BaseCommand> = Partial<Record<CommandType, string>>;
 
@@ -60,8 +60,8 @@ export type TelegramBotOptions<CommandType extends BaseCommand, CallbackData, Us
   commands?: BotCommands<CommandType>;
   callbackDataProvider?: CallbackDataProvider<NoInfer<CommandType>, CallbackData, NoInfer<UserData>>;
   usernameWhitelist?: string[];
-  getMessageErrorResponse?: GetMessageErrorResponse<NoInfer<CommandType>, NoInfer<CallbackData>, NoInfer<UserData>>;
-  getCallbackQueryErrorResponse?: GetCallbackQueryErrorResponse<
+  getMessageErrorAction?: GetMessageErrorAction<NoInfer<CommandType>, NoInfer<CallbackData>, NoInfer<UserData>>;
+  getCallbackQueryErrorAction?: GetCallbackQueryErrorAction<
     NoInfer<CommandType>,
     NoInfer<CallbackData>,
     NoInfer<UserData>
@@ -87,7 +87,7 @@ export type MessageHandler<
   MessageUserData extends UserData,
 > = (
   ctx: MessageHandlerContext<CommandType, MessageUserData>,
-) => MaybePromise<ResponseToMessage<CommandType, CallbackData, UserData> | null | undefined | void>;
+) => MaybePromise<ActionOnMessage<CommandType, CallbackData, UserData> | null | undefined | void>;
 
 export type CallbackQueryHandlerContext<UserData, QueryCallbackData> = {
   data: QueryCallbackData;
@@ -102,12 +102,12 @@ export type CallbackQueryHandler<
   QueryCallbackData extends CallbackData,
 > = (
   ctx: CallbackQueryHandlerContext<UserData, QueryCallbackData>,
-) => MaybePromise<ResponseToCallbackQuery<CommandType, CallbackData, UserData> | null | undefined | void>;
+) => MaybePromise<ActionOnCallbackQuery<CommandType, CallbackData, UserData> | null | undefined | void>;
 
 export type BaseCommand = `/${string}`;
 
 export type TelegramBotEvents = {
-  responseError: [err: unknown];
+  actionError: [err: unknown];
 };
 
 export class TelegramBot<
@@ -118,8 +118,8 @@ export class TelegramBot<
   private readonly _commandHandlers: Partial<
     Record<CommandType, MessageHandler<CommandType, CallbackData, UserData, UserData>>
   > = {};
-  private readonly _getMessageErrorResponse?: GetMessageErrorResponse<CommandType, CallbackData, UserData>;
-  private readonly _getCallbackQueryErrorResponse?: GetCallbackQueryErrorResponse<CommandType, CallbackData, UserData>;
+  private readonly _getMessageErrorAction?: GetMessageErrorAction<CommandType, CallbackData, UserData>;
+  private readonly _getCallbackQueryErrorAction?: GetCallbackQueryErrorAction<CommandType, CallbackData, UserData>;
   private _messageHandler?: MessageHandler<CommandType, CallbackData, UserData, UserData>;
   private _usersSharedHandler?: UsersSharedHandler<CommandType, CallbackData, UserData>;
   private _chatSharedHandler?: ChatSharedHandler<CommandType, CallbackData, UserData>;
@@ -141,13 +141,13 @@ export class TelegramBot<
     this.callbackDataProvider = options.callbackDataProvider;
     this.userDataProvider = options.userDataProvider;
     this.usernameWhitelist = options.usernameWhitelist;
-    this._getMessageErrorResponse = options.getMessageErrorResponse;
-    this._getCallbackQueryErrorResponse = options.getCallbackQueryErrorResponse;
+    this._getMessageErrorAction = options.getMessageErrorAction;
+    this._getCallbackQueryErrorAction = options.getCallbackQueryErrorAction;
   }
 
-  private _emitResponseError(err: unknown): void {
-    if (this.listenerCount('responseError') > 0) {
-      this.emit('responseError', err);
+  private _emitActionError(err: unknown): void {
+    if (this.listenerCount('actionError') > 0) {
+      this.emit('actionError', err);
     } else {
       console.log(prepareErrorForLogging(err));
     }
@@ -189,11 +189,11 @@ export class TelegramBot<
         const { from: user, text, entities, users_shared: usersShared, chat_shared: chatShared } = message;
 
         if (usersShared && this._usersSharedHandler) {
-          const response = await this._usersSharedHandler({
+          const action = await this._usersSharedHandler({
             usersShared,
           });
 
-          await response?.respondToMessage({
+          await action?.onMessage({
             message,
             bot: this,
           });
@@ -202,11 +202,11 @@ export class TelegramBot<
         }
 
         if (chatShared && this._chatSharedHandler) {
-          const response = await this._chatSharedHandler({
+          const action = await this._chatSharedHandler({
             chatShared,
           });
 
-          await response?.respondToMessage({
+          await action?.onMessage({
             message,
             bot: this,
           });
@@ -259,31 +259,31 @@ export class TelegramBot<
 
         handler ??= this._messageHandler;
 
-        const response = await handler?.({
+        const action = await handler?.({
           message,
           userData,
           commands,
         });
 
-        await response?.respondToMessage({
+        await action?.onMessage({
           message,
           bot: this,
         });
       } catch (err) {
-        this._emitResponseError(err);
+        this._emitActionError(err);
 
         try {
-          const response = await this._getMessageErrorResponse?.({
+          const action = await this._getMessageErrorAction?.({
             err,
             message,
           });
 
-          await response?.respondToMessage({
+          await action?.onMessage({
             message,
             bot: this,
           });
         } catch (err) {
-          this._emitResponseError(err);
+          this._emitActionError(err);
         }
       }
     });
@@ -326,14 +326,14 @@ export class TelegramBot<
           throw new TelegramBotError(TelegramBotErrorCode.UnsupportedCallbackData);
         }
 
-        const response = await handler({
+        const action = await handler({
           data: callbackData,
           message,
           userData: userData as UserData,
         });
 
-        if (response) {
-          await response.respondToCallbackQuery({
+        if (action) {
+          await action.onCallbackQuery({
             bot: this,
             query,
           });
@@ -341,21 +341,21 @@ export class TelegramBot<
           await answerQuery();
         }
       } catch (err) {
-        this._emitResponseError(err);
+        this._emitActionError(err);
 
         if (!query.message) {
           return await answerQuery();
         }
 
         try {
-          const response = await this._getCallbackQueryErrorResponse?.({
+          const action = await this._getCallbackQueryErrorAction?.({
             err,
             message: query.message,
             query,
           });
 
-          if (response) {
-            await response.respondToCallbackQuery({
+          if (action) {
+            await action.onCallbackQuery({
               bot: this,
               query,
             });
@@ -363,7 +363,7 @@ export class TelegramBot<
             await answerQuery();
           }
         } catch (err) {
-          this._emitResponseError(err);
+          this._emitActionError(err);
         }
       }
     });

@@ -3,9 +3,9 @@ import { z } from 'zod';
 import {
   InlineKeyboard,
   JsonCallbackDataProvider,
-  ImmediateMessageResponse as LibImmediateMessageResponse,
+  MessageAction as LibMessageAction,
   Markdown,
-  NotificationResponse,
+  NotificationAction,
   ReplyKeyboard,
   TelegramBot,
 } from '../../lib';
@@ -32,7 +32,7 @@ const callbackData = z.union([
 
 type CallbackData = z.TypeOf<typeof callbackData>;
 
-const ImmediateMessageResponse = LibImmediateMessageResponse<BotCommand, CallbackData>;
+const MessageAction = LibMessageAction<BotCommand, CallbackData>;
 
 const inlineKeyboard: InlineKeyboard<CallbackData> = [
   [
@@ -124,7 +124,7 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
   });
 
   bot.handleCommand('/example_inline', async () => {
-    return new ImmediateMessageResponse({
+    return new MessageAction({
       content: {
         type: 'text',
         text: 'Inline keyboard example',
@@ -134,7 +134,7 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
   });
 
   bot.handleCommand('/example_reply', async () => {
-    return new ImmediateMessageResponse({
+    return new MessageAction({
       content: {
         type: 'text',
         text: 'Reply keyboard example',
@@ -144,7 +144,7 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
   });
 
   bot.handleUsersShared(async ({ usersShared: { users } }) => {
-    return new ImmediateMessageResponse({
+    return new MessageAction({
       content: {
         type: 'text',
         text: Markdown.create`You've shared: ${Markdown.join(
@@ -156,7 +156,7 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
   });
 
   bot.handleChatShared(async ({ chatShared: { chat_id, title } }) => {
-    return new ImmediateMessageResponse({
+    return new MessageAction({
       content: {
         type: 'text',
         text: `You've shared chat (#${chat_id}) with title ${JSON.stringify(title)}`,
@@ -168,7 +168,7 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
     const { contact, location, poll, text } = message;
 
     if (contact) {
-      return new ImmediateMessageResponse({
+      return new MessageAction({
         content: {
           type: 'text',
           text: `You've shared a contact: ${contact.first_name} (${contact.phone_number})`,
@@ -177,7 +177,7 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
     }
 
     if (poll) {
-      return new ImmediateMessageResponse({
+      return new MessageAction({
         content: {
           type: 'text',
           text: `You've shared a poll: ${poll.question}`,
@@ -186,7 +186,7 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
     }
 
     if (location) {
-      return new ImmediateMessageResponse({
+      return new MessageAction({
         content: {
           type: 'text',
           text: `You've shared a location: ${location.latitude}, ${location.longitude}`,
@@ -195,7 +195,7 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
     }
 
     if (text === closeKeyboardText) {
-      return new ImmediateMessageResponse({
+      return new MessageAction({
         content: {
           type: 'text',
           text: 'Keyboard closed',
@@ -208,20 +208,20 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
   });
 
   callbackDataProvider.handle('notificationResponse', async () => {
-    return new NotificationResponse({
+    return new NotificationAction({
       text: 'Notification response',
     });
   });
 
   callbackDataProvider.handle('alertResponse', async () => {
-    return new NotificationResponse({
+    return new NotificationAction({
       text: 'Alert response',
       showAlert: true,
     });
   });
 
   callbackDataProvider.handle('editTextResponse', async () => {
-    return new ImmediateMessageResponse({
+    return new MessageAction({
       content: {
         type: 'text',
         text: 'Edited text response',
