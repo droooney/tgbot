@@ -25,6 +25,7 @@ const commands = {
   '/voice': 'Voice',
   '/video_note': 'Video note',
   '/paid_media': 'Paid media',
+  '/media_group': 'Media group',
   '/contact': 'Contact',
   '/dice': 'Dice',
   '/sticker': 'Sticker',
@@ -322,6 +323,28 @@ blockquote row 9`,
           },
         ],
       },
+    });
+  });
+
+  bot.handleCommand('/media_group', async () => {
+    return new WaitingAction({
+      type: 'upload_document',
+      getAction: () =>
+        new MessageAction({
+          content: {
+            type: 'mediaGroup',
+            media: [
+              {
+                type: 'photo',
+                media: fs.createReadStream(path.resolve('./examples/assets/house.png')),
+              },
+              {
+                type: 'video',
+                media: fs.createReadStream(path.resolve('./examples/assets/video1.mp4')),
+              },
+            ],
+          },
+        }),
     });
   });
 

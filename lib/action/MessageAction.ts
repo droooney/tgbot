@@ -2,6 +2,10 @@ import {
   ForceReply,
   InlineKeyboardMarkup,
   InputFile,
+  InputMediaAudio,
+  InputMediaDocument,
+  InputMediaPhoto,
+  InputMediaVideo,
   InputPaidMedia,
   LinkPreviewOptions,
   Message,
@@ -132,7 +136,11 @@ export type MessageActionPaidMediaContent = {
   showCaptionAboveMedia?: boolean;
 };
 
-// TODO: add media group content
+export type MessageActionMediaGroupContent = {
+  type: 'mediaGroup';
+  media: (InputMediaAudio | InputMediaDocument | InputMediaPhoto | InputMediaVideo)[];
+};
+
 // TODO: add location content
 // TODO: add venue content
 
@@ -167,6 +175,7 @@ export type MessageActionContent =
   | MessageActionVoiceContent
   | MessageActionVideoNoteContent
   | MessageActionPaidMediaContent
+  | MessageActionMediaGroupContent
   | MessageActionContactContent
   | MessageActionDiceContent
   | MessageActionStickerContent;
@@ -366,7 +375,7 @@ export class MessageAction<CommandType extends BaseCommand = never, CallbackData
     });
   }
 
-  async send(ctx: SendMessageContext<CommandType, CallbackData, UserData>): Promise<Message> {
+  async send(ctx: SendMessageContext<CommandType, CallbackData, UserData>): Promise<Message[]> {
     const sendBasicOptions = {
       chat_id: ctx.chatId,
       business_connection_id: ctx.businessConnectionId ?? this.businessConnectionId,
@@ -381,135 +390,166 @@ export class MessageAction<CommandType extends BaseCommand = never, CallbackData
     const { content } = this;
 
     if (content.type === 'text') {
-      return ctx.bot.api.sendMessage({
-        ...sendBasicOptions,
-        text: content.text.toString(),
-        parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
-        link_preview_options: content.linkPreviewOptions,
-      });
+      return [
+        await ctx.bot.api.sendMessage({
+          ...sendBasicOptions,
+          text: content.text.toString(),
+          parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
+          link_preview_options: content.linkPreviewOptions,
+        }),
+      ];
     }
 
     if (content.type === 'photo') {
-      return ctx.bot.api.sendPhoto({
-        ...sendBasicOptions,
-        photo: content.photo,
-        caption: content.text?.toString(),
-        parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
-        show_caption_above_media: content.showCaptionAboveMedia,
-        has_spoiler: content.hasSpoiler,
-        // FIXME: remove when typings are fixed
-      }) as Promise<Message>;
+      return [
+        (await ctx.bot.api.sendPhoto({
+          ...sendBasicOptions,
+          photo: content.photo,
+          caption: content.text?.toString(),
+          parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
+          show_caption_above_media: content.showCaptionAboveMedia,
+          has_spoiler: content.hasSpoiler,
+          // FIXME: remove when typings are fixed
+        })) as Message,
+      ];
     }
 
     if (content.type === 'audio') {
-      return ctx.bot.api.sendAudio({
-        ...sendBasicOptions,
-        audio: content.audio,
-        duration: content.duration,
-        performer: content.performer,
-        title: content.title,
-        thumbnail: content.thumbnail,
-        caption: content.text?.toString(),
-        parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
-      });
+      return [
+        await ctx.bot.api.sendAudio({
+          ...sendBasicOptions,
+          audio: content.audio,
+          duration: content.duration,
+          performer: content.performer,
+          title: content.title,
+          thumbnail: content.thumbnail,
+          caption: content.text?.toString(),
+          parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
+        }),
+      ];
     }
 
     if (content.type === 'document') {
-      return ctx.bot.api.sendDocument({
-        ...sendBasicOptions,
-        document: content.document,
-        thumbnail: content.thumbnail,
-        caption: content.text?.toString(),
-        parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
-        disable_content_type_detection: content.disableContentTypeDetection,
-      });
+      return [
+        await ctx.bot.api.sendDocument({
+          ...sendBasicOptions,
+          document: content.document,
+          thumbnail: content.thumbnail,
+          caption: content.text?.toString(),
+          parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
+          disable_content_type_detection: content.disableContentTypeDetection,
+        }),
+      ];
     }
 
     if (content.type === 'video') {
-      return ctx.bot.api.sendVideo({
-        ...sendBasicOptions,
-        video: content.video,
-        duration: content.duration,
-        width: content.width,
-        height: content.height,
-        thumbnail: content.thumbnail,
-        caption: content.text?.toString(),
-        parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
-        show_caption_above_media: content.showCaptionAboveMedia,
-        has_spoiler: content.hasSpoiler,
-        supports_streaming: content.supportsStreaming,
-      });
+      return [
+        await ctx.bot.api.sendVideo({
+          ...sendBasicOptions,
+          video: content.video,
+          duration: content.duration,
+          width: content.width,
+          height: content.height,
+          thumbnail: content.thumbnail,
+          caption: content.text?.toString(),
+          parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
+          show_caption_above_media: content.showCaptionAboveMedia,
+          has_spoiler: content.hasSpoiler,
+          supports_streaming: content.supportsStreaming,
+        }),
+      ];
     }
 
     if (content.type === 'animation') {
-      return ctx.bot.api.sendAnimation({
-        ...sendBasicOptions,
-        animation: content.animation,
-        duration: content.duration,
-        width: content.width,
-        height: content.height,
-        thumbnail: content.thumbnail,
-        caption: content.text?.toString(),
-        parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
-        show_caption_above_media: content.showCaptionAboveMedia,
-        has_spoiler: content.hasSpoiler,
-      });
+      return [
+        await ctx.bot.api.sendAnimation({
+          ...sendBasicOptions,
+          animation: content.animation,
+          duration: content.duration,
+          width: content.width,
+          height: content.height,
+          thumbnail: content.thumbnail,
+          caption: content.text?.toString(),
+          parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
+          show_caption_above_media: content.showCaptionAboveMedia,
+          has_spoiler: content.hasSpoiler,
+        }),
+      ];
     }
 
     if (content.type === 'voice') {
-      return ctx.bot.api.sendVoice({
-        ...sendBasicOptions,
-        voice: content.voice,
-        duration: content.duration,
-        caption: content.text?.toString(),
-        parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
-      });
+      return [
+        await ctx.bot.api.sendVoice({
+          ...sendBasicOptions,
+          voice: content.voice,
+          duration: content.duration,
+          caption: content.text?.toString(),
+          parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
+        }),
+      ];
     }
 
     if (content.type === 'videoNote') {
-      return ctx.bot.api.sendVideoNote({
-        ...sendBasicOptions,
-        video_note: content.videoNote,
-        duration: content.duration,
-        length: content.length,
-        thumbnail: content.thumbnail,
-      });
+      return [
+        await ctx.bot.api.sendVideoNote({
+          ...sendBasicOptions,
+          video_note: content.videoNote,
+          duration: content.duration,
+          length: content.length,
+          thumbnail: content.thumbnail,
+        }),
+      ];
     }
 
     if (content.type === 'paidMedia') {
-      return ctx.bot.api.sendPaidMedia({
+      return [
+        await ctx.bot.api.sendPaidMedia({
+          ...sendBasicOptions,
+          star_count: content.starCount,
+          media: content.media,
+          payload: content.payload,
+          show_caption_above_media: content.showCaptionAboveMedia,
+        }),
+      ];
+    }
+
+    if (content.type === 'mediaGroup') {
+      return ctx.bot.api.sendMediaGroup({
         ...sendBasicOptions,
-        star_count: content.starCount,
         media: content.media,
-        payload: content.payload,
-        show_caption_above_media: content.showCaptionAboveMedia,
       });
     }
 
     if (content.type === 'contact') {
-      return ctx.bot.api.sendContact({
-        ...sendBasicOptions,
-        phone_number: content.phoneNumber,
-        first_name: content.firstName,
-        last_name: content.lastName,
-        vcard: content.vcard,
-      });
+      return [
+        await ctx.bot.api.sendContact({
+          ...sendBasicOptions,
+          phone_number: content.phoneNumber,
+          first_name: content.firstName,
+          last_name: content.lastName,
+          vcard: content.vcard,
+        }),
+      ];
     }
 
     if (content.type === 'dice') {
-      return ctx.bot.api.sendDice({
-        ...sendBasicOptions,
-        emoji: content.emoji,
-      });
+      return [
+        await ctx.bot.api.sendDice({
+          ...sendBasicOptions,
+          emoji: content.emoji,
+        }),
+      ];
     }
 
     if (content.type === 'sticker') {
-      return ctx.bot.api.sendSticker({
-        ...sendBasicOptions,
-        // FIXME: remove when typings are fixed
-        message_thread_id: sendBasicOptions.message_thread_id as any,
-        sticker: content.sticker,
-      });
+      return [
+        await ctx.bot.api.sendSticker({
+          ...sendBasicOptions,
+          // FIXME: remove when typings are fixed
+          message_thread_id: sendBasicOptions.message_thread_id as any,
+          sticker: content.sticker,
+        }),
+      ];
     }
 
     throw new TelegramBotError(TelegramBotErrorCode.UnsupportedContent);
