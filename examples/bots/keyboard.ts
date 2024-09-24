@@ -64,6 +64,8 @@ const inlineKeyboard: InlineKeyboard<CallbackData> = [
   ],
 ];
 
+const closeKeyboardText = 'Close keyboard';
+
 const replyKeyboard = new ReplyKeyboard({
   buttons: [
     ['Simple reply button'],
@@ -88,6 +90,25 @@ const replyKeyboard = new ReplyKeyboard({
         },
       },
     ],
+    [
+      {
+        type: 'requestContact',
+        text: 'Send contact',
+      },
+    ],
+    [
+      {
+        type: 'requestPoll',
+        text: 'Send poll',
+      },
+    ],
+    [
+      {
+        type: 'requestLocation',
+        text: 'Send location',
+      },
+    ],
+    [closeKeyboardText],
   ],
   resize: true,
 });
@@ -141,6 +162,49 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
         text: `You've shared chat (#${chat_id}) with title ${JSON.stringify(title)}`,
       },
     });
+  });
+
+  bot.handleMessage(async ({ message }) => {
+    const { contact, location, poll, text } = message;
+
+    if (contact) {
+      return new ImmediateMessageResponse({
+        content: {
+          type: 'text',
+          text: `You've shared a contact: ${contact.first_name} (${contact.phone_number})`,
+        },
+      });
+    }
+
+    if (poll) {
+      return new ImmediateMessageResponse({
+        content: {
+          type: 'text',
+          text: `You've shared a poll: ${poll.question}`,
+        },
+      });
+    }
+
+    if (location) {
+      return new ImmediateMessageResponse({
+        content: {
+          type: 'text',
+          text: `You've shared a location: ${location.latitude}, ${location.longitude}`,
+        },
+      });
+    }
+
+    if (text === closeKeyboardText) {
+      return new ImmediateMessageResponse({
+        content: {
+          type: 'text',
+          text: 'Keyboard closed',
+        },
+        replyMarkup: {
+          remove_keyboard: true,
+        },
+      });
+    }
   });
 
   callbackDataProvider.handle('notificationResponse', async () => {

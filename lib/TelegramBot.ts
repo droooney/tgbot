@@ -9,7 +9,6 @@ import {
   User,
   UsersShared,
 } from 'typescript-telegram-bot-api/dist/types';
-import { ReplyParameters } from 'typescript-telegram-bot-api/dist/types/ReplyParameters';
 
 import { TelegramBotError, TelegramBotErrorCode } from './TelegramBotError';
 import { CallbackDataProvider } from './callbackData';
@@ -121,6 +120,7 @@ export class TelegramBot<
   > = {};
   private readonly _getMessageErrorResponse?: GetMessageErrorResponse<CommandType, CallbackData, UserData>;
   private readonly _getCallbackQueryErrorResponse?: GetCallbackQueryErrorResponse<CommandType, CallbackData, UserData>;
+  private _messageHandler?: MessageHandler<CommandType, CallbackData, UserData, UserData>;
   private _usersSharedHandler?: UsersSharedHandler<CommandType, CallbackData, UserData>;
   private _chatSharedHandler?: ChatSharedHandler<CommandType, CallbackData, UserData>;
   private _meInfo?: User;
@@ -165,7 +165,12 @@ export class TelegramBot<
     return this;
   }
 
-  // TODO: add handleMessage (callback: MessageCallback)
+  handleMessage(handler: MessageHandler<CommandType, CallbackData, UserData, UserData>): this {
+    this._messageHandler = handler;
+
+    return this;
+  }
+
   // TODO: add handleText (match: string | string[] | RegExp, callback: MessageCallback)
 
   handleUsersShared(handler: UsersSharedHandler<CommandType, CallbackData, UserData>): this {
@@ -248,26 +253,22 @@ export class TelegramBot<
           }
         }
 
-        if (!handler && userData) {
-          handler = this.userDataProvider?.getUserDataHandler<UserData>(userData);
+        if (userData) {
+          handler ??= this.userDataProvider?.getUserDataHandler<UserData>(userData);
         }
 
-        if (!handler) {
-          return;
-        }
+        handler ??= this._messageHandler;
 
-        const response = await handler({
+        const response = await handler?.({
           message,
           userData,
           commands,
         });
 
-        if (response) {
-          await response.respondToMessage({
-            message,
-            bot: this,
-          });
-        }
+        await response?.respondToMessage({
+          message,
+          bot: this,
+        });
       } catch (err) {
         this._emitResponseError(err);
 
