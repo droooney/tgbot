@@ -24,6 +24,7 @@ const commands = {
   '/animation': 'Animation',
   '/voice': 'Voice',
   '/video_note': 'Video note',
+  '/paid_media': 'Paid media',
   '/contact': 'Contact',
   '/dice': 'Dice',
   '/sticker': 'Sticker',
@@ -303,6 +304,27 @@ blockquote row 9`,
     });
   });
 
+  bot.handleCommand('/paid_media', async () => {
+    return new MessageAction({
+      content: {
+        type: 'paidMedia',
+        starCount: 1,
+        media: [
+          {
+            type: 'photo',
+            // FIXME: remove when typings are fixed
+            media: fs.createReadStream(path.resolve('./examples/assets/house.png')) as never,
+          },
+          {
+            type: 'video',
+            // FIXME: remove when typings are fixed
+            media: fs.createReadStream(path.resolve('./examples/assets/video1.mp4')) as never,
+          },
+        ],
+      },
+    });
+  });
+
   bot.handleCommand('/contact', async () => {
     return new MessageAction({
       content: {
@@ -381,6 +403,8 @@ blockquote row 9`,
         type: 'photo',
         photo: fs.createReadStream(path.resolve('./examples/assets/house_heart.png')),
         text: Markdown.create`edited caption with ${Markdown.bold('bold')} text`,
+        showCaptionAboveMedia: true,
+        hasSpoiler: true,
       },
     });
   });
@@ -415,6 +439,8 @@ blockquote row 9`,
         video: fs.createReadStream(path.resolve('./examples/assets/video2.mp4')),
         text: Markdown.create`edited caption with ${Markdown.bold('bold')} text`,
         thumbnail: fs.createReadStream(path.resolve('./examples/assets/thumb2.png')),
+        showCaptionAboveMedia: true,
+        hasSpoiler: true,
       },
     });
   });
@@ -426,6 +452,8 @@ blockquote row 9`,
         animation: fs.createReadStream(path.resolve('./examples/assets/animation2.gif')),
         text: Markdown.create`edited caption with ${Markdown.bold('bold')} text`,
         thumbnail: fs.createReadStream(path.resolve('./examples/assets/thumb2.png')),
+        showCaptionAboveMedia: true,
+        hasSpoiler: true,
       },
     });
   });

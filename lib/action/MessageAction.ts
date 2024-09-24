@@ -2,6 +2,7 @@ import {
   ForceReply,
   InlineKeyboardMarkup,
   InputFile,
+  InputPaidMedia,
   LinkPreviewOptions,
   Message,
   ParseMode,
@@ -123,7 +124,14 @@ export type MessageActionVideoNoteContent = {
   thumbnail?: InputFile | string;
 };
 
-// TODO: add paid media content
+export type MessageActionPaidMediaContent = {
+  type: 'paidMedia';
+  starCount: number;
+  media: InputPaidMedia[];
+  payload?: string;
+  showCaptionAboveMedia?: boolean;
+};
+
 // TODO: add media group content
 // TODO: add location content
 // TODO: add venue content
@@ -158,6 +166,7 @@ export type MessageActionContent =
   | MessageActionAnimationContent
   | MessageActionVoiceContent
   | MessageActionVideoNoteContent
+  | MessageActionPaidMediaContent
   | MessageActionContactContent
   | MessageActionDiceContent
   | MessageActionStickerContent;
@@ -464,6 +473,16 @@ export class MessageAction<CommandType extends BaseCommand = never, CallbackData
         duration: content.duration,
         length: content.length,
         thumbnail: content.thumbnail,
+      });
+    }
+
+    if (content.type === 'paidMedia') {
+      return ctx.bot.api.sendPaidMedia({
+        ...sendBasicOptions,
+        star_count: content.starCount,
+        media: content.media,
+        payload: content.payload,
+        show_caption_above_media: content.showCaptionAboveMedia,
       });
     }
 
