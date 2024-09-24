@@ -21,6 +21,7 @@ const commands = {
   '/document': 'Document',
   '/large_document': 'Large document',
   '/video': 'Video',
+  '/animation': 'Animation',
   '/voice': 'Voice',
   '/video_note': 'Video note',
   '/contact': 'Contact',
@@ -39,6 +40,7 @@ type CallbackData =
   | 'editDocument'
   | 'editDocumentWithPhoto'
   | 'editVideo'
+  | 'editAnimation'
   | 'responseWithNotification'
   | 'responseWithNotificationAlert';
 
@@ -257,6 +259,26 @@ blockquote row 9`,
     });
   });
 
+  bot.handleCommand('/animation', async () => {
+    return new MessageAction({
+      content: {
+        type: 'animation',
+        animation: fs.createReadStream(path.resolve('./examples/assets/animation1.gif')),
+        text: Markdown.create`caption with ${Markdown.bold('bold')} text`,
+        thumbnail: fs.createReadStream(path.resolve('./examples/assets/thumb1.png')),
+      },
+      replyMarkup: [
+        [
+          {
+            type: 'callbackData',
+            text: 'Edit animation',
+            callbackData: 'editAnimation',
+          },
+        ],
+      ],
+    });
+  });
+
   bot.handleCommand('/voice', async () => {
     return new MessageAction({
       content: {
@@ -391,6 +413,17 @@ blockquote row 9`,
       content: {
         type: 'video',
         video: fs.createReadStream(path.resolve('./examples/assets/video2.mp4')),
+        text: Markdown.create`edited caption with ${Markdown.bold('bold')} text`,
+        thumbnail: fs.createReadStream(path.resolve('./examples/assets/thumb2.png')),
+      },
+    });
+  });
+
+  callbackDataProvider.handle('editAnimation', async () => {
+    return new MessageAction({
+      content: {
+        type: 'animation',
+        animation: fs.createReadStream(path.resolve('./examples/assets/animation2.gif')),
         text: Markdown.create`edited caption with ${Markdown.bold('bold')} text`,
         thumbnail: fs.createReadStream(path.resolve('./examples/assets/thumb2.png')),
       },

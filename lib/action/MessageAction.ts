@@ -94,7 +94,18 @@ export type MessageActionVideoContent = {
   supportsStreaming?: boolean;
 };
 
-// TODO: animation content
+export type MessageActionAnimationContent = {
+  type: 'animation';
+  animation: InputFile | string;
+  duration?: number;
+  width?: number;
+  height?: number;
+  thumbnail?: InputFile | string;
+  text?: string | Markdown;
+  parseMode?: ParseMode;
+  showCaptionAboveMedia?: boolean;
+  hasSpoiler?: boolean;
+};
 
 export type MessageActionVoiceContent = {
   type: 'voice';
@@ -144,6 +155,7 @@ export type MessageActionContent =
   | MessageActionAudioContent
   | MessageActionDocumentContent
   | MessageActionVideoContent
+  | MessageActionAnimationContent
   | MessageActionVoiceContent
   | MessageActionVideoNoteContent
   | MessageActionContactContent
@@ -255,6 +267,22 @@ export class MessageAction<CommandType extends BaseCommand = never, CallbackData
             show_caption_above_media: content.showCaptionAboveMedia,
             has_spoiler: content.hasSpoiler,
             supports_streaming: content.supportsStreaming,
+          },
+        });
+      } else if (content.type === 'animation') {
+        editedMessage = await ctx.bot.api.editMessageMedia({
+          ...editBasicOptions,
+          media: {
+            type: 'animation',
+            media: content.animation,
+            duration: content.duration,
+            width: content.width,
+            height: content.height,
+            thumbnail: content.thumbnail,
+            caption: content.text?.toString(),
+            parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
+            show_caption_above_media: content.showCaptionAboveMedia,
+            has_spoiler: content.hasSpoiler,
           },
         });
       }
@@ -401,6 +429,21 @@ export class MessageAction<CommandType extends BaseCommand = never, CallbackData
         show_caption_above_media: content.showCaptionAboveMedia,
         has_spoiler: content.hasSpoiler,
         supports_streaming: content.supportsStreaming,
+      });
+    }
+
+    if (content.type === 'animation') {
+      return ctx.bot.api.sendAnimation({
+        ...sendBasicOptions,
+        animation: content.animation,
+        duration: content.duration,
+        width: content.width,
+        height: content.height,
+        thumbnail: content.thumbnail,
+        caption: content.text?.toString(),
+        parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
+        show_caption_above_media: content.showCaptionAboveMedia,
+        has_spoiler: content.hasSpoiler,
       });
     }
 
