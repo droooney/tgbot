@@ -1,12 +1,19 @@
 import { EventEmitter } from 'node:events';
 
 import { TelegramBot as TelegramBotApi } from 'typescript-telegram-bot-api';
-import { BotCommand, CallbackQuery, Message, User } from 'typescript-telegram-bot-api/dist/types';
+import {
+  BotCommand,
+  CallbackQuery,
+  ChatShared,
+  Message,
+  User,
+  UsersShared,
+} from 'typescript-telegram-bot-api/dist/types';
 import { ReplyParameters } from 'typescript-telegram-bot-api/dist/types/ReplyParameters';
 
 import { TelegramBotError, TelegramBotErrorCode } from './TelegramBotError';
 import { CallbackDataProvider } from './callbackData';
-import { MessageResponse, ResponseToCallbackQuery, ResponseToMessage } from './response';
+import { ResponseToCallbackQuery, ResponseToMessage } from './response';
 import { MaybePromise } from './types';
 import { UserDataProvider } from './userData';
 import { prepareErrorForLogging } from './utils/error';
@@ -30,6 +37,22 @@ export type CallbackQueryErrorResponseContext = {
 export type GetCallbackQueryErrorResponse<CommandType extends BaseCommand, CallbackData, UserData> = (
   ctx: CallbackQueryErrorResponseContext,
 ) => MaybePromise<ResponseToCallbackQuery<CommandType, CallbackData, UserData> | null | undefined | void>;
+
+export type UsersSharedHandlerContext = {
+  usersShared: UsersShared;
+};
+
+export type UsersSharedHandler<in out CommandType extends BaseCommand, in out CallbackData, in out UserData> = (
+  ctx: UsersSharedHandlerContext,
+) => MaybePromise<ResponseToMessage<CommandType, CallbackData, UserData> | null | undefined | void>;
+
+export type ChatSharedHandlerContext = {
+  chatShared: ChatShared;
+};
+
+export type ChatSharedHandler<in out CommandType extends BaseCommand, in out CallbackData, in out UserData> = (
+  ctx: ChatSharedHandlerContext,
+) => MaybePromise<ResponseToMessage<CommandType, CallbackData, UserData> | null | undefined | void>;
 
 export type BotCommands<CommandType extends BaseCommand> = Partial<Record<CommandType, string>>;
 
@@ -102,6 +125,8 @@ export class TelegramBot<
   > = {};
   private readonly _getMessageErrorResponse?: GetMessageErrorResponse<CommandType, CallbackData, UserData>;
   private readonly _getCallbackQueryErrorResponse?: GetCallbackQueryErrorResponse<CommandType, CallbackData, UserData>;
+  private _usersSharedHandler?: UsersSharedHandler<CommandType, CallbackData, UserData>;
+  private _chatSharedHandler?: ChatSharedHandler<CommandType, CallbackData, UserData>;
   private _meInfo?: User;
 
   readonly api: TelegramBotApi;
@@ -132,18 +157,20 @@ export class TelegramBot<
     }
   }
 
-  async editMessage(
-    message: Message,
-    response: MessageResponse<CommandType, CallbackData, UserData>,
-  ): Promise<Message> {
-    return response.edit({
-      message,
-      bot: this,
-    });
+  handleChatShared(handler: ChatSharedHandler<CommandType, CallbackData, UserData>): this {
+    this._chatSharedHandler = handler;
+
+    return this;
   }
 
   handleCommand(command: CommandType, handler: MessageHandler<CommandType, CallbackData, UserData, UserData>): this {
     this._commandHandlers[command] = handler;
+
+    return this;
+  }
+
+  handleUsersShared(handler: UsersSharedHandler<CommandType, CallbackData, UserData>): this {
+    this._usersSharedHandler = handler;
 
     return this;
   }
@@ -155,22 +182,36 @@ export class TelegramBot<
     return Boolean(user.username && (!this.usernameWhitelist || this.usernameWhitelist.includes(user.username)));
   }
 
-  async sendMessage(
-    chatId: number,
-    response: MessageResponse<CommandType, CallbackData, UserData>,
-    options?: SendMessageOptions,
-  ): Promise<Message> {
-    return response.send({
-      chatId,
-      bot: this,
-      replyParameters: options?.replyParameters,
-    });
-  }
-
   async start(): Promise<void> {
     this.api.on('message', async (message) => {
       try {
-        const { from: user, text, entities } = message;
+        const { from: user, text, entities, users_shared: usersShared, chat_shared: chatShared } = message;
+
+        if (usersShared && this._usersSharedHandler) {
+          const response = await this._usersSharedHandler({
+            usersShared,
+          });
+
+          await response?.respondToMessage({
+            message,
+            bot: this,
+          });
+
+          return;
+        }
+
+        if (chatShared && this._chatSharedHandler) {
+          const response = await this._chatSharedHandler({
+            chatShared,
+          });
+
+          await response?.respondToMessage({
+            message,
+            bot: this,
+          });
+
+          return;
+        }
 
         if (user && !this.isUserAllowed(user)) {
           return;

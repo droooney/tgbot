@@ -17,9 +17,9 @@ export type RequestUsersReplyKeyboardButton = BaseReplyKeyboardButton & {
   isBot?: boolean;
   isPremium?: boolean;
   maxQuantity?: number;
-  requestName?: string;
-  requestUsername?: string;
-  requestPhoto?: string;
+  requestName?: boolean;
+  requestUsername?: boolean;
+  requestPhoto?: boolean;
 };
 
 // TODO: request chat button
@@ -95,9 +95,12 @@ export class ReplyKeyboard {
                 user_is_bot: button.isBot,
                 user_is_premium: button.isPremium,
                 max_quantity: button.maxQuantity,
-                request_name: button.requestName,
-                request_username: button.requestUsername,
-                request_photo: button.requestPhoto,
+                // FIXME: remove when typings are fixed
+                request_name: button.requestName as never,
+                // FIXME: remove when typings are fixed
+                request_username: button.requestUsername as never,
+                // FIXME: remove when typings are fixed
+                request_photo: button.requestPhoto as never,
               },
             };
           }
