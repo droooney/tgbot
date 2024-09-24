@@ -142,7 +142,18 @@ export type MessageActionMediaGroupContent = {
 };
 
 // TODO: add location content
-// TODO: add venue content
+
+export type MessageActionVenueContent = {
+  type: 'venue';
+  latitude: number;
+  longitude: number;
+  title: string;
+  address: string;
+  foursquareId?: string;
+  foursquareType?: string;
+  googlePlaceId?: string;
+  googlePlaceType?: string;
+};
 
 export type MessageActionContactContent = {
   type: 'contact';
@@ -198,6 +209,7 @@ export type MessageActionContent =
   | MessageActionVideoNoteContent
   | MessageActionPaidMediaContent
   | MessageActionMediaGroupContent
+  | MessageActionVenueContent
   | MessageActionContactContent
   | MessageActionDiceContent
   | MessageActionPollContent
@@ -541,6 +553,22 @@ export class MessageAction<CommandType extends BaseCommand = never, CallbackData
         ...sendBasicOptions,
         media: content.media,
       });
+    }
+
+    if (content.type === 'venue') {
+      return [
+        await ctx.bot.api.sendVenue({
+          ...sendBasicOptions,
+          latitude: content.latitude,
+          longitude: content.longitude,
+          title: content.title,
+          address: content.address,
+          foursquare_id: content.foursquareId,
+          foursquare_type: content.foursquareType,
+          google_place_id: content.googlePlaceId,
+          google_place_type: content.googlePlaceType,
+        }),
+      ];
     }
 
     if (content.type === 'contact') {

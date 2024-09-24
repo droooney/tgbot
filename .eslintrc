@@ -223,7 +223,7 @@
       }
     ],
     "quote-props": ["error", "as-needed"],
-    "quotes": ["error", "single"],
+    "quotes": ["off", "single"],
     "require-yield": "off",
     "semi": ["error", "always"],
     "semi-spacing": [

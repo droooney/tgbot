@@ -26,6 +26,7 @@ const commands = {
   '/video_note': 'Video note',
   '/paid_media': 'Paid media',
   '/media_group': 'Media group',
+  '/venue': 'Venue',
   '/contact': 'Contact',
   '/dice': 'Dice',
   '/poll': 'Poll',
@@ -347,6 +348,20 @@ blockquote row 9`,
             ],
           },
         }),
+    });
+  });
+
+  bot.handleCommand('/venue', async () => {
+    return new MessageAction({
+      content: {
+        type: 'venue',
+        latitude: 56.7447061,
+        longitude: 60.8036319,
+        title: 'Koltsovo Airport',
+        address: "ul. Bahchivandji, 1, Yekaterinburg, Sverdlovskaya oblast', Russia, 620025",
+        googlePlaceId: 'ChIJvQOvvuVBwUMRokF0eTgS0RA',
+        googlePlaceType: 'airport',
+      },
     });
   });
 
