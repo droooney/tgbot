@@ -6,6 +6,7 @@ import {
   CallbackQuery,
   ChatShared,
   Message,
+  UpdateType,
   User,
   UsersShared,
 } from 'typescript-telegram-bot-api/dist/types';
@@ -57,6 +58,7 @@ export type BotCommands<CommandType extends BaseCommand> = Partial<Record<Comman
 
 export type TelegramBotOptions<CommandType extends BaseCommand, CallbackData, UserData> = {
   token: string;
+  allowedUpdates?: UpdateType[];
   commands?: BotCommands<CommandType>;
   callbackDataProvider?: CallbackDataProvider<NoInfer<CommandType>, CallbackData, NoInfer<UserData>>;
   usernameWhitelist?: string[];
@@ -136,6 +138,7 @@ export class TelegramBot<
 
     this.api = new TelegramBotApi({
       botToken: options.token,
+      allowedUpdates: options.allowedUpdates,
     });
     this.commands = options.commands;
     this.callbackDataProvider = options.callbackDataProvider;

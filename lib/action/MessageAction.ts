@@ -49,6 +49,11 @@ export type ReplyMarkup<CallbackData> =
   | ReplyKeyboardRemove
   | ForceReply;
 
+export type GeoPoint = {
+  latitude: number;
+  longitude: number;
+};
+
 export type MessageActionTextContent = {
   type: 'text';
   text: string | Markdown;
@@ -141,12 +146,18 @@ export type MessageActionMediaGroupContent = {
   media: (InputMediaAudio | InputMediaDocument | InputMediaPhoto | InputMediaVideo)[];
 };
 
-// TODO: add location content
+export type MessageActionLocationContent = {
+  type: 'location';
+  point: GeoPoint | null;
+  horizontalAccuracy?: number;
+  livePeriod?: number;
+  heading?: number;
+  proximityAlertRadius?: number;
+};
 
 export type MessageActionVenueContent = {
   type: 'venue';
-  latitude: number;
-  longitude: number;
+  point: GeoPoint;
   title: string;
   address: string;
   foursquareId?: string;
@@ -198,6 +209,10 @@ export type MessageActionStickerContent = {
   sticker: InputFile | string;
 };
 
+export type MessageActionUnmodifiedContent = {
+  type: 'unmodified';
+};
+
 export type MessageActionContent =
   | MessageActionTextContent
   | MessageActionPhotoContent
@@ -209,11 +224,13 @@ export type MessageActionContent =
   | MessageActionVideoNoteContent
   | MessageActionPaidMediaContent
   | MessageActionMediaGroupContent
+  | MessageActionLocationContent
   | MessageActionVenueContent
   | MessageActionContactContent
   | MessageActionDiceContent
   | MessageActionPollContent
-  | MessageActionStickerContent;
+  | MessageActionStickerContent
+  | MessageActionUnmodifiedContent;
 
 export type MessageActionOptions<CallbackData> = {
   content: MessageActionContent;
@@ -261,6 +278,8 @@ export class MessageAction<CommandType extends BaseCommand = never, CallbackData
 
     try {
       if (content.type === 'text') {
+        // TODO: if message has caption, edit caption instead
+
         editedMessage = await ctx.bot.api.editMessageText({
           ...editBasicOptions,
           text: content.text.toString(),
@@ -338,6 +357,27 @@ export class MessageAction<CommandType extends BaseCommand = never, CallbackData
             has_spoiler: content.hasSpoiler,
           },
         });
+      } else if (content.type === 'location') {
+        if (content.point) {
+          editedMessage = await ctx.bot.api.editMessageLiveLocation({
+            ...editBasicOptions,
+            latitude: content.point.latitude,
+            longitude: content.point.longitude,
+            horizontal_accuracy: content.horizontalAccuracy,
+            live_period:
+              content.livePeriod === Infinity
+                ? 0x7fffffff
+                : typeof content.livePeriod === 'number'
+                  ? content.livePeriod / 1000
+                  : undefined,
+            heading: content.heading,
+            proximity_alert_radius: content.proximityAlertRadius,
+          });
+        } else {
+          editedMessage = await ctx.bot.api.stopMessageLiveLocation(editBasicOptions);
+        }
+      } else if (content.type === 'unmodified') {
+        editedMessage = await ctx.bot.api.editMessageReplyMarkup(editBasicOptions);
       }
     } catch (err) {
       if (!(err instanceof Error) || !/message is not modified/.test(err.message)) {
@@ -425,6 +465,8 @@ export class MessageAction<CommandType extends BaseCommand = never, CallbackData
     const { content } = this;
 
     if (content.type === 'text') {
+      // TODO: split into multiple messages if needed
+
       return [
         await ctx.bot.api.sendMessage({
           ...sendBasicOptions,
@@ -555,12 +597,37 @@ export class MessageAction<CommandType extends BaseCommand = never, CallbackData
       });
     }
 
+    if (content.type === 'location') {
+      const { point } = content;
+
+      if (!point) {
+        throw new TelegramBotError(TelegramBotErrorCode.NoLocationPoint);
+      }
+
+      return [
+        await ctx.bot.api.sendLocation({
+          ...sendBasicOptions,
+          latitude: point.latitude,
+          longitude: point.longitude,
+          horizontal_accuracy: content.horizontalAccuracy,
+          live_period:
+            content.livePeriod === Infinity
+              ? 0x7fffffff
+              : typeof content.livePeriod === 'number'
+                ? content.livePeriod / 1000
+                : undefined,
+          heading: content.heading,
+          proximity_alert_radius: content.proximityAlertRadius,
+        }),
+      ];
+    }
+
     if (content.type === 'venue') {
       return [
         await ctx.bot.api.sendVenue({
           ...sendBasicOptions,
-          latitude: content.latitude,
-          longitude: content.longitude,
+          latitude: content.point.latitude,
+          longitude: content.point.longitude,
           title: content.title,
           address: content.address,
           foursquare_id: content.foursquareId,

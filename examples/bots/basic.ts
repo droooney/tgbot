@@ -1,7 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { performance } from 'node:perf_hooks';
 
 import {
+  GeoPoint,
   MessageAction as LibMessageAction,
   Markdown,
   MessageReactionAction,
@@ -26,6 +28,8 @@ const commands = {
   '/video_note': 'Video note',
   '/paid_media': 'Paid media',
   '/media_group': 'Media group',
+  '/location': 'Location',
+  '/live_location': 'Live location',
   '/venue': 'Venue',
   '/contact': 'Contact',
   '/dice': 'Dice',
@@ -46,6 +50,8 @@ type CallbackData =
   | 'editDocumentWithPhoto'
   | 'editVideo'
   | 'editAnimation'
+  | 'startMoving'
+  | 'stopMoving'
   | 'responseWithNotification'
   | 'responseWithNotificationAlert';
 
@@ -53,6 +59,29 @@ const MessageAction = LibMessageAction<BotCommand, CallbackData>;
 
 const reactionsPool = ['👍', '👎', '❤', '🔥', '🥰', '👏', '😁', '🤔', '🤯', '😱', '🤬', '😢', '🎉'] as const;
 const dicePool = ['🎲', '🎯', '🏀', '⚽', '🎳', '🎰'] as const;
+
+const liveStartCoord: GeoPoint = {
+  latitude: 56.837266,
+  longitude: 60.594541,
+};
+
+const liveEndCoord: GeoPoint = {
+  latitude: 56.839061,
+  longitude: 60.61151,
+};
+
+const liveDuration = 60 * 1000;
+
+const getCurrentCoord = (timeElapsed: number): GeoPoint => {
+  return {
+    latitude:
+      liveStartCoord.latitude +
+      (liveEndCoord.latitude - liveStartCoord.latitude) * Math.min(1, timeElapsed / liveDuration),
+    longitude:
+      liveStartCoord.longitude +
+      (liveEndCoord.longitude - liveStartCoord.longitude) * Math.min(1, timeElapsed / liveDuration),
+  };
+};
 
 const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
   const callbackDataProvider = new StringCallbackDataProvider<BotCommand, CallbackData>();
@@ -351,12 +380,49 @@ blockquote row 9`,
     });
   });
 
+  bot.handleCommand('/location', async () => {
+    return new MessageAction({
+      content: {
+        type: 'location',
+        point: {
+          latitude: 56.7447061,
+          longitude: 60.8036319,
+        },
+        horizontalAccuracy: 10,
+      },
+    });
+  });
+
+  bot.handleCommand('/live_location', async () => {
+    return new MessageAction({
+      content: {
+        type: 'location',
+        point: {
+          latitude: liveStartCoord.latitude,
+          longitude: liveStartCoord.longitude,
+        },
+        livePeriod: 5 * 60 * 1000,
+      },
+      replyMarkup: [
+        [
+          {
+            type: 'callbackData',
+            text: 'Start moving',
+            callbackData: 'startMoving',
+          },
+        ],
+      ],
+    });
+  });
+
   bot.handleCommand('/venue', async () => {
     return new MessageAction({
       content: {
         type: 'venue',
-        latitude: 56.7447061,
-        longitude: 60.8036319,
+        point: {
+          latitude: 56.7447061,
+          longitude: 60.8036319,
+        },
         title: 'Koltsovo Airport',
         address: "ul. Bahchivandji, 1, Yekaterinburg, Sverdlovskaya oblast', Russia, 620025",
         googlePlaceId: 'ChIJvQOvvuVBwUMRokF0eTgS0RA',
@@ -519,6 +585,74 @@ blockquote row 9`,
         thumbnail: fs.createReadStream(path.resolve('./examples/assets/thumb2.png')),
         showCaptionAboveMedia: true,
         hasSpoiler: true,
+      },
+    });
+  });
+
+  callbackDataProvider.handle('startMoving', async ({ message }) => {
+    const start = performance.now();
+
+    const interval = setInterval(async () => {
+      const newPoint = getCurrentCoord(performance.now() - start);
+
+      await new MessageAction({
+        content: {
+          type: 'location',
+          point: newPoint,
+        },
+        replyMarkup: [
+          [
+            {
+              type: 'callbackData',
+              text: 'Stop moving',
+              callbackData: 'stopMoving',
+            },
+          ],
+        ],
+      }).edit({
+        bot,
+        message,
+      });
+
+      if (
+        Math.abs(newPoint.latitude - liveEndCoord.latitude) < Number.EPSILON &&
+        Math.abs(newPoint.longitude - liveEndCoord.longitude) < Number.EPSILON
+      ) {
+        clearInterval(interval);
+
+        await new MessageAction({
+          content: {
+            type: 'location',
+            point: null,
+          },
+        }).edit({
+          bot,
+          message,
+        });
+      }
+    }, 5000);
+
+    return new MessageAction({
+      content: {
+        type: 'unmodified',
+      },
+      replyMarkup: [
+        [
+          {
+            type: 'callbackData',
+            text: 'Stop moving',
+            callbackData: 'stopMoving',
+          },
+        ],
+      ],
+    });
+  });
+
+  callbackDataProvider.handle('stopMoving', async () => {
+    return new MessageAction({
+      content: {
+        type: 'location',
+        point: null,
       },
     });
   });

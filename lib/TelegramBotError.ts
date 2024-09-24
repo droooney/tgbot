@@ -3,6 +3,7 @@ export const TelegramBotErrorCode = {
   EmptyButtonText: 'EmptyButtonText',
   LongCallbackData: 'LongCallbackData',
   LongNotificationText: 'LongNotificationText',
+  NoLocationPoint: 'NoLocationPoint',
   UnsupportedCallbackData: 'UnsupportedCallbackData',
   UnsupportedContent: 'UnsupportedContent',
 } as const;
@@ -13,6 +14,7 @@ export type TelegramBotErrorOptions = ErrorOptions & {
   message?: string;
 };
 
+// TODO: add error context (i.e. query for UnsupportedCallbackData etc)
 export class TelegramBotError extends Error {
   readonly code: TelegramBotErrorCode;
 
