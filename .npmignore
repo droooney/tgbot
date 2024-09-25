@@ -1,5 +1,5 @@
-lib
+*
 
-.editorconfig
-.eslintrc
-.prettierrc
+!dist/**/*
+!LICENSE
+!package.json
