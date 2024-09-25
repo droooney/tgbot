@@ -61,6 +61,7 @@ const MessageAction = LibMessageAction<BotCommand, CallbackData>;
 
 const reactionsPool = ['👍', '👎', '❤', '🔥', '🥰', '👏', '😁', '🤔', '🤯', '😱', '🤬', '😢', '🎉'] as const;
 const dicePool = ['🎲', '🎯', '🏀', '⚽', '🎳', '🎰'] as const;
+const effectsPool = ['👍', '👎', '❤️', '🔥', '🎉', '💩'] as const;
 
 const liveStartCoord: GeoPoint = {
   latitude: 56.837266,
@@ -117,6 +118,7 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
           },
         ],
       ],
+      messageEffect: effectsPool[Math.floor(Math.random() * effectsPool.length)],
     });
   });
 

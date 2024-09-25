@@ -38,7 +38,7 @@ export type SendMessageContext<CommandType extends BaseCommand, CallbackData, Us
   disableNotification?: boolean;
   protectContent?: boolean;
   allowSendingWithoutReply?: boolean;
-  messageEffectId?: string;
+  messageEffect?: MessageEffect;
 };
 
 export type ReplyMarkup<CallbackData> =
@@ -234,6 +234,8 @@ export type MessageActionContent =
 
 export type MessageActionMode = 'linked' | 'separate';
 
+export type MessageEffect = '👍' | '👎' | '❤️' | '🔥' | '🎉' | '💩' | { id: string };
+
 export type MessageActionOptions<CallbackData> = {
   content: MessageActionContent;
   mode?: MessageActionMode;
@@ -242,7 +244,16 @@ export type MessageActionOptions<CallbackData> = {
   replyMarkup?: ReplyMarkup<CallbackData>;
   protectContent?: boolean;
   allowSendingWithoutReply?: boolean;
-  messageEffectId?: string;
+  messageEffect?: MessageEffect;
+};
+
+const MESSAGE_EFFECT_ID_MAP: Partial<Record<string, string>> = {
+  '👍': '5107584321108051014',
+  '👎': '5104858069142078462',
+  '❤️': '5159385139981059251',
+  '🔥': '5104841245755180586',
+  '🎉': '5046509860389126442',
+  '💩': '5046589136895476101',
 };
 
 /* eslint-disable brace-style */
@@ -257,7 +268,7 @@ export class MessageAction<CommandType extends BaseCommand = never, CallbackData
   readonly replyMarkup?: ReplyMarkup<CallbackData>;
   readonly protectContent?: boolean;
   readonly allowSendingWithoutReply?: boolean;
-  readonly messageEffectId?: string;
+  readonly messageEffect?: MessageEffect;
 
   constructor(options: MessageActionOptions<CallbackData>) {
     this.content = options.content;
@@ -267,7 +278,7 @@ export class MessageAction<CommandType extends BaseCommand = never, CallbackData
     this.replyMarkup = options?.replyMarkup;
     this.protectContent = options?.protectContent;
     this.allowSendingWithoutReply = options?.allowSendingWithoutReply;
-    this.messageEffectId = options?.messageEffectId;
+    this.messageEffect = options?.messageEffect;
   }
 
   async edit(ctx: EditMessageContext<CommandType, CallbackData, UserData>): Promise<Message> {
@@ -407,6 +418,12 @@ export class MessageAction<CommandType extends BaseCommand = never, CallbackData
     return this.replyMarkup && 'inline_keyboard' in this.replyMarkup ? this.replyMarkup : undefined;
   }
 
+  getMessageEffectId(messageEffect?: MessageEffect): string | undefined {
+    const effect = messageEffect ?? this.messageEffect;
+
+    return effect && (typeof effect === 'string' ? MESSAGE_EFFECT_ID_MAP[effect] : effect.id);
+  }
+
   async getReplyMarkup(
     bot: TelegramBot<CommandType, CallbackData, UserData>,
   ): Promise<InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | ForceReply | undefined> {
@@ -476,7 +493,7 @@ export class MessageAction<CommandType extends BaseCommand = never, CallbackData
       reply_markup: await this.getReplyMarkup(ctx.bot),
       protect_content: ctx.protectContent ?? this.protectContent,
       allow_sending_without_reply: ctx.allowSendingWithoutReply ?? this.allowSendingWithoutReply,
-      message_effect_id: ctx.messageEffectId ?? this.messageEffectId,
+      message_effect_id: this.getMessageEffectId(ctx.messageEffect),
     };
     const { content } = this;
 
