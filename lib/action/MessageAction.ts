@@ -20,8 +20,7 @@ import { ReplyKeyboard } from '../ReplyKeyboard';
 import { BaseCommand, TelegramBot } from '../TelegramBot';
 import { TelegramBotError, TelegramBotErrorCode } from '../TelegramBotError';
 import { InlineKeyboard } from '../inlineKeyboard';
-import { prepareInlineKeyboard } from '../utils/inlineKeyboard';
-import { isArray } from '../utils/is';
+import { isArray, prepareInlineKeyboard } from '../utils';
 import { Action, ActionOnCallbackQueryContext, ActionOnMessageContext } from './Action';
 
 export type EditMessageContext<CommandType extends BaseCommand, CallbackData, UserData> = {

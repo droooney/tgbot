@@ -13,7 +13,7 @@ import {
   TelegramBot,
   WaitingAction,
 } from '../../lib';
-import { delay } from '../../lib/utils/promise';
+import { delay } from '../../lib/utils';
 import { CreateBot } from '../runExample';
 
 const commands = {

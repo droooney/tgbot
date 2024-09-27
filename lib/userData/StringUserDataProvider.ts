@@ -1,14 +1,28 @@
 import { BaseCommand, MessageHandler } from '../TelegramBot';
+import { MaybePromise } from '../types';
 import { UserDataProvider } from './UserDataProvider';
 
-export abstract class StringUserDataProvider<
-  CommandType extends BaseCommand,
-  CallbackData,
-  UserData extends string,
-> extends UserDataProvider<CommandType, CallbackData, UserData> {
+export type StringUserDataProviderOptions<UserData extends string> = {
+  getOrCreateUserData(userId: number): MaybePromise<UserData>;
+  setUserData(userId: number, data: UserData): MaybePromise<void>;
+};
+
+/* eslint-disable brace-style */
+export class StringUserDataProvider<CommandType extends BaseCommand, CallbackData, UserData extends string>
+  implements UserDataProvider<CommandType, CallbackData, UserData>
+{
+  /* eslint-enable brace-style */
   private readonly _handlers: {
     [Data in UserData]?: MessageHandler<CommandType, CallbackData, UserData, Data>;
   } = {};
+
+  getOrCreateUserData: (userId: number) => MaybePromise<UserData>;
+  setUserData: (userId: number, data: UserData) => MaybePromise<void>;
+
+  constructor(options: StringUserDataProviderOptions<UserData>) {
+    this.getOrCreateUserData = options.getOrCreateUserData;
+    this.setUserData = options.setUserData;
+  }
 
   getUserDataHandler<Data extends UserData>(
     userData: Data,

@@ -16,8 +16,7 @@ import { ActionOnCallbackQuery, ActionOnMessage } from './action';
 import { CallbackDataProvider } from './callbackData';
 import { MaybePromise } from './types';
 import { UserDataProvider } from './userData';
-import { prepareErrorForLogging } from './utils/error';
-import { isTruthy } from './utils/is';
+import { isTruthy, prepareErrorForLogging } from './utils';
 
 export type MessageErrorActionContext = {
   err: unknown;
@@ -78,7 +77,9 @@ export type TelegramBotOptions<CommandType extends BaseCommand, CallbackData, Us
 
 export type MessageHandlerContext<CommandType extends BaseCommand, UserData> = {
   message: Message;
-  userData?: UserData;
+  user?: User & {
+    data: UserData;
+  };
   commands: (CommandType | string)[];
 };
 
@@ -189,7 +190,7 @@ export class TelegramBot<
   async start(): Promise<void> {
     this.api.on('message', async (message) => {
       try {
-        const { from: user, text, entities, users_shared: usersShared, chat_shared: chatShared } = message;
+        const { from: telegramUser, text, entities, users_shared: usersShared, chat_shared: chatShared } = message;
 
         if (usersShared && this._usersSharedHandler) {
           const action = await this._usersSharedHandler({
@@ -217,11 +218,14 @@ export class TelegramBot<
           return;
         }
 
-        if (user && !this.isUserAllowed(user)) {
+        if (telegramUser && !this.isUserAllowed(telegramUser)) {
           return;
         }
 
-        const userData = user && (await this.userDataProvider?.getOrCreateUserData(user.id));
+        const user = telegramUser && {
+          ...telegramUser,
+          data: (await this.userDataProvider?.getOrCreateUserData(telegramUser.id)) as UserData,
+        };
         const commands =
           entities
             ?.filter(({ type, offset, length }) => type === 'bot_command')
@@ -256,15 +260,15 @@ export class TelegramBot<
           }
         }
 
-        if (userData) {
-          handler ??= this.userDataProvider?.getUserDataHandler<UserData>(userData);
+        if (user) {
+          handler ??= this.userDataProvider?.getUserDataHandler<UserData>(user.data);
         }
 
         handler ??= this._messageHandler;
 
         const action = await handler?.({
           message,
-          userData,
+          user,
           commands,
         });
 

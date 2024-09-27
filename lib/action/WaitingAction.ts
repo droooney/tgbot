@@ -4,7 +4,7 @@ import { TelegramBot as LibTelegramBot } from 'typescript-telegram-bot-api';
 
 import { BaseCommand } from '../TelegramBot';
 import { MaybePromise } from '../types';
-import { delay } from '../utils/promise';
+import { delay } from '../utils';
 import { Action, ActionOnMessage, ActionOnMessageContext } from './Action';
 
 export type WaitingActionType = Parameters<LibTelegramBot['sendChatAction']>[0]['action'];

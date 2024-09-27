@@ -1,6 +1,6 @@
 import { ChatAdministratorRights, ReplyKeyboardMarkup } from 'typescript-telegram-bot-api/dist/types';
 
-import { isTruthy } from './utils/is';
+import { isTruthy } from './utils';
 
 export type BaseReplyKeyboardButton = {
   text: string;
