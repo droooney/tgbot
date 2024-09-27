@@ -349,13 +349,11 @@ blockquote row 9`,
         media: [
           {
             type: 'photo',
-            // FIXME: remove when typings are fixed
-            media: fs.createReadStream(path.resolve('./examples/assets/house.png')) as never,
+            media: fs.createReadStream(path.resolve('./examples/assets/house.png')),
           },
           {
             type: 'video',
-            // FIXME: remove when typings are fixed
-            media: fs.createReadStream(path.resolve('./examples/assets/video1.mp4')) as never,
+            media: fs.createReadStream(path.resolve('./examples/assets/video1.mp4')),
           },
         ],
       },

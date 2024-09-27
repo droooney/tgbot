@@ -176,7 +176,6 @@ export type MessageActionContactContent = {
 
 export type MessageActionDiceContent = {
   type: 'dice';
-  // FIXME: don't hardcode after typings are fixed
   emoji?: '🎲' | '🎯' | '🏀' | '⚽' | '🎳' | '🎰';
 };
 
@@ -512,15 +511,14 @@ export class MessageAction<CommandType extends BaseCommand = never, CallbackData
 
     if (content.type === 'photo') {
       return [
-        (await ctx.bot.api.sendPhoto({
+        await ctx.bot.api.sendPhoto({
           ...sendBasicOptions,
           photo: content.photo,
           caption: content.text?.toString(),
           parse_mode: content.text instanceof Markdown ? 'MarkdownV2' : content.parseMode,
           show_caption_above_media: content.showCaptionAboveMedia,
           has_spoiler: content.hasSpoiler,
-          // FIXME: remove when typings are fixed
-        })) as Message,
+        }),
       ];
     }
 
@@ -733,8 +731,6 @@ export class MessageAction<CommandType extends BaseCommand = never, CallbackData
       return [
         await ctx.bot.api.sendSticker({
           ...sendBasicOptions,
-          // FIXME: remove when typings are fixed
-          message_thread_id: sendBasicOptions.message_thread_id as any,
           sticker: content.sticker,
         }),
       ];

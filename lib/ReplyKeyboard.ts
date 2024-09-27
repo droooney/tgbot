@@ -1,5 +1,4 @@
 import { ChatAdministratorRights, ReplyKeyboardMarkup } from 'typescript-telegram-bot-api/dist/types';
-import { KeyboardButton } from 'typescript-telegram-bot-api/dist/types/KeyboardButton';
 
 import { isTruthy } from './utils/is';
 
@@ -109,12 +108,9 @@ export class ReplyKeyboard {
                 user_is_bot: button.isBot,
                 user_is_premium: button.isPremium,
                 max_quantity: button.maxQuantity,
-                // FIXME: remove when typings are fixed
-                request_name: button.requestName as never,
-                // FIXME: remove when typings are fixed
-                request_username: button.requestUsername as never,
-                // FIXME: remove when typings are fixed
-                request_photo: button.requestPhoto as never,
+                request_name: button.requestName,
+                request_username: button.requestUsername,
+                request_photo: button.requestPhoto,
               },
             };
           }
@@ -128,17 +124,12 @@ export class ReplyKeyboard {
                 chat_is_forum: button.isForum,
                 chat_has_username: button.hasUsername,
                 chat_is_created: button.isCreated,
-                // FIXME: remove when typings are fixed
-                user_administrator_rights: button.userAdministratorRights as never,
-                // FIXME: remove when typings are fixed
-                bot_administrator_rights: button.botAdministratorRights as never,
+                user_administrator_rights: button.userAdministratorRights,
+                bot_administrator_rights: button.botAdministratorRights,
                 bot_is_member: button.botIsMember,
-                // FIXME: remove when typings are fixed
-                request_title: button.requestTitle as never,
-                // FIXME: remove when typings are fixed
-                request_username: button.requestUsername as never,
-                // FIXME: remove when typings are fixed
-                request_photo: button.requestPhoto as never,
+                request_title: button.requestTitle,
+                request_username: button.requestUsername,
+                request_photo: button.requestPhoto,
               },
             };
           }
@@ -161,8 +152,7 @@ export class ReplyKeyboard {
             return {
               text: button.text,
               request_poll: {
-                // FIXME: remove when typings are fixed
-                type: button.type as 'regular',
+                type: button.pollType,
               },
             };
           }
@@ -178,8 +168,7 @@ export class ReplyKeyboard {
 
           return {
             text: button.text,
-            // FIXME: remove when typings are fixed
-          } as KeyboardButton;
+          };
         }),
       ),
       is_persistent: this.isPersistent,
