@@ -211,6 +211,7 @@ export type MessageActionUnmodifiedContent = {
   type: 'unmodified';
 };
 
+// TODO: add string/Markdown content (simple text)
 export type MessageActionContent =
   | MessageActionTextContent
   | MessageActionPhotoContent
