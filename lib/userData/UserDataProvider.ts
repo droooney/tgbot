@@ -5,6 +5,6 @@ export type UserDataProvider<in out CommandType extends BaseCommand, in out Call
   getOrCreateUserData(userId: number): MaybePromise<UserData>;
   getUserDataHandler<Data extends UserData>(
     userData: Data,
-  ): MessageHandler<NoInfer<CommandType>, NoInfer<CallbackData>, UserData, Data> | null;
+  ): MessageHandler<NoInfer<CommandType>, NoInfer<CallbackData>, UserData, Data, true> | null;
   setUserData(userId: number, data: UserData): MaybePromise<void>;
 };

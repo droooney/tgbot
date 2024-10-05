@@ -1,4 +1,5 @@
 import { BaseCommand, CallbackQueryHandler } from '../TelegramBot';
+import { Filter } from '../types';
 import { CallbackDataProvider } from './CallbackDataProvider';
 
 export type BaseJsonCallbackDataType = string;
@@ -10,7 +11,7 @@ export type BaseJsonCallbackData<Type extends BaseJsonCallbackDataType> = {
 export type JsonCallbackDataByType<
   CallbackData extends BaseJsonCallbackData<BaseJsonCallbackDataType>,
   T extends CallbackData['type'],
-> = Extract<CallbackData, { type: T }>;
+> = Filter<CallbackData, { type: T }>;
 
 export type JsonCallbackDataProviderOptions<
   Type extends BaseJsonCallbackDataType,

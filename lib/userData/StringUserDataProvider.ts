@@ -13,7 +13,7 @@ export class StringUserDataProvider<CommandType extends BaseCommand, CallbackDat
 {
   /* eslint-enable brace-style */
   private readonly _handlers: {
-    [Data in UserData]?: MessageHandler<CommandType, CallbackData, UserData, Data>;
+    [Data in UserData]?: MessageHandler<CommandType, CallbackData, UserData, Data, true>;
   } = {};
 
   getOrCreateUserData: (userId: number) => MaybePromise<UserData>;
@@ -26,13 +26,13 @@ export class StringUserDataProvider<CommandType extends BaseCommand, CallbackDat
 
   getUserDataHandler<Data extends UserData>(
     userData: Data,
-  ): MessageHandler<CommandType, CallbackData, UserData, Data> | null {
+  ): MessageHandler<CommandType, CallbackData, UserData, Data, true> | null {
     return this._handlers[userData] ?? null;
   }
 
   handle<Data extends UserData>(
     data: Data | Data[],
-    handler: MessageHandler<CommandType, CallbackData, UserData, Data>,
+    handler: MessageHandler<CommandType, CallbackData, UserData, Data, true>,
   ): this {
     for (const dataString of typeof data === 'string' ? [data] : data) {
       this._handlers[dataString] = handler;

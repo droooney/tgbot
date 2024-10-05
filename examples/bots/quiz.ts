@@ -56,10 +56,6 @@ const createBot: CreateBot<BotCommand, never, UserData> = (token) => {
   });
 
   userDataProvider.handle('simple:get-name', async ({ user, message }) => {
-    if (!user) {
-      return;
-    }
-
     const { text } = message;
 
     if (!text) {
@@ -85,10 +81,6 @@ const createBot: CreateBot<BotCommand, never, UserData> = (token) => {
   });
 
   userDataProvider.handle('simple:get-age', async ({ user, message }) => {
-    if (!user) {
-      return;
-    }
-
     const { text } = message;
 
     if (!text) {
@@ -135,10 +127,6 @@ const createBot: CreateBot<BotCommand, never, UserData> = (token) => {
   });
 
   userDataProvider.handle('simple:get-location', async ({ user, message }) => {
-    if (!user) {
-      return;
-    }
-
     const { text } = message;
 
     if (!text) {

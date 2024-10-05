@@ -67,7 +67,7 @@ export type TelegramBotOptions<CommandType extends BaseCommand, CallbackData, Us
     NoInfer<CallbackData>,
     NoInfer<UserData>
   >;
-} & ([UserData] extends [never]
+} & ([UserData] extends [never | undefined]
   ? {
       userDataProvider?: never;
     }
@@ -75,11 +75,13 @@ export type TelegramBotOptions<CommandType extends BaseCommand, CallbackData, Us
       userDataProvider: UserDataProvider<NoInfer<CommandType>, NoInfer<CallbackData>, UserData>;
     });
 
-export type MessageHandlerContext<CommandType extends BaseCommand, UserData> = {
+export type UserWithData<UserData> = User & {
+  data: UserData;
+};
+
+export type MessageHandlerContext<CommandType extends BaseCommand, UserData, WithUser extends boolean> = {
   message: Message;
-  user?: User & {
-    data: UserData;
-  };
+  user: WithUser extends true ? UserWithData<UserData> : undefined;
   commands: (CommandType | string)[];
 };
 
@@ -88,16 +90,15 @@ export type MessageHandler<
   in out CallbackData,
   in out UserData,
   MessageUserData extends UserData,
+  WithUser extends boolean,
 > = (
-  ctx: MessageHandlerContext<CommandType, MessageUserData>,
+  ctx: MessageHandlerContext<CommandType, MessageUserData, WithUser>,
 ) => MaybePromise<ActionOnMessage<CommandType, CallbackData, UserData> | null | undefined | void>;
 
 export type CallbackQueryHandlerContext<UserData, QueryCallbackData> = {
   data: QueryCallbackData;
   message: Message;
-  user: User & {
-    data: UserData;
-  };
+  user: UserWithData<UserData>;
 };
 
 export type CallbackQueryHandler<
@@ -121,11 +122,11 @@ export class TelegramBot<
   in out UserData = never,
 > extends EventEmitter<TelegramBotEvents> {
   private readonly _commandHandlers: Partial<
-    Record<CommandType, MessageHandler<CommandType, CallbackData, UserData, UserData>>
+    Record<CommandType, MessageHandler<CommandType, CallbackData, UserData, UserData, boolean>>
   > = {};
   private readonly _getMessageErrorAction?: GetMessageErrorAction<CommandType, CallbackData, UserData>;
   private readonly _getCallbackQueryErrorAction?: GetCallbackQueryErrorAction<CommandType, CallbackData, UserData>;
-  private _messageHandler?: MessageHandler<CommandType, CallbackData, UserData, UserData>;
+  private _messageHandler?: MessageHandler<CommandType, CallbackData, UserData, UserData, boolean>;
   private _usersSharedHandler?: UsersSharedHandler<CommandType, CallbackData, UserData>;
   private _chatSharedHandler?: ChatSharedHandler<CommandType, CallbackData, UserData>;
   private _meInfo?: User;
@@ -165,13 +166,16 @@ export class TelegramBot<
     return this;
   }
 
-  handleCommand(command: CommandType, handler: MessageHandler<CommandType, CallbackData, UserData, UserData>): this {
+  handleCommand(
+    command: CommandType,
+    handler: MessageHandler<CommandType, CallbackData, UserData, UserData, boolean>,
+  ): this {
     this._commandHandlers[command] = handler;
 
     return this;
   }
 
-  handleMessage(handler: MessageHandler<CommandType, CallbackData, UserData, UserData>): this {
+  handleMessage(handler: MessageHandler<CommandType, CallbackData, UserData, UserData, boolean>): this {
     this._messageHandler = handler;
 
     return this;
@@ -249,7 +253,7 @@ export class TelegramBot<
             })
             .filter(isTruthy) ?? [];
 
-        let handler: MessageHandler<CommandType, CallbackData, UserData, UserData> | null | undefined;
+        let handler: MessageHandler<CommandType, CallbackData, UserData, UserData, boolean> | null | undefined;
 
         // TODO: add support for multiple commands
         for (const command of commands) {
