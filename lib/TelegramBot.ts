@@ -95,7 +95,9 @@ export type MessageHandler<
 export type CallbackQueryHandlerContext<UserData, QueryCallbackData> = {
   data: QueryCallbackData;
   message: Message;
-  userData: UserData;
+  user: User & {
+    data: UserData;
+  };
 };
 
 export type CallbackQueryHandler<
@@ -303,9 +305,9 @@ export class TelegramBot<
       };
 
       try {
-        const { from: user, message, data } = query;
+        const { from: telegramUser, message, data } = query;
 
-        if (!message || !this.isUserAllowed(user)) {
+        if (!message || !this.isUserAllowed(telegramUser)) {
           return await answerQuery();
         }
 
@@ -318,8 +320,11 @@ export class TelegramBot<
           return;
         }
 
-        const [userData, callbackData] = await Promise.all([
-          this.userDataProvider?.getOrCreateUserData(user.id),
+        const [user, callbackData] = await Promise.all([
+          (async () => ({
+            ...telegramUser,
+            data: (await this.userDataProvider?.getOrCreateUserData(telegramUser.id)) as UserData,
+          }))(),
           this.callbackDataProvider.parseCallbackData(data),
         ]);
 
@@ -336,7 +341,7 @@ export class TelegramBot<
         const action = await handler({
           data: callbackData,
           message,
-          userData: userData as UserData,
+          user,
         });
 
         if (action) {
