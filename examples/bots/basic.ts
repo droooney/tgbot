@@ -3,12 +3,13 @@ import path from 'node:path';
 import { performance } from 'node:perf_hooks';
 
 import {
+  ActionsBatchAction,
   ActionsStreamAction,
   GeoPoint,
   MessageAction as LibMessageAction,
+  NotificationAction as LibNotificationAction,
   Markdown,
   MessageReactionAction,
-  NotificationAction,
   StringCallbackDataProvider,
   TelegramBot,
   WaitingAction,
@@ -55,9 +56,11 @@ type CallbackData =
   | 'startMoving'
   | 'stopMoving'
   | 'responseWithNotification'
-  | 'responseWithNotificationAlert';
+  | 'responseWithNotificationAlert'
+  | 'responseWithNotificationAndText';
 
 const MessageAction = LibMessageAction<BotCommand, CallbackData>;
+const NotificationAction = LibNotificationAction<BotCommand, CallbackData>;
 
 const reactionsPool = ['👍', '👎', '❤', '🔥', '🥰', '👏', '😁', '🤔', '🤯', '😱', '🤬', '😢', '🎉'] as const;
 const dicePool = ['🎲', '🎯', '🏀', '⚽', '🎳', '🎰'] as const;
@@ -517,6 +520,13 @@ blockquote row 9`,
             callbackData: 'responseWithNotificationAlert',
           },
         ],
+        [
+          {
+            type: 'callbackData',
+            text: 'Notification + text response',
+            callbackData: 'responseWithNotificationAndText',
+          },
+        ],
       ],
     });
   });
@@ -668,6 +678,20 @@ blockquote row 9`,
       text: 'Alert response',
       showAlert: true,
     });
+  });
+
+  callbackDataProvider.handle('responseWithNotificationAndText', async () => {
+    return new ActionsBatchAction(() => [
+      new MessageAction({
+        content: {
+          type: 'text',
+          text: 'Text response',
+        },
+      }),
+      new NotificationAction({
+        text: 'Notification response',
+      }),
+    ]);
   });
 
   return bot;
