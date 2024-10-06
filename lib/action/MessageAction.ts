@@ -449,6 +449,10 @@ export class MessageAction<CommandType extends BaseCommand = never, CallbackData
           bot: ctx.bot,
           chatId: message.chat.id,
           messageThreadId: 'message_thread_id' in message ? message.message_thread_id : undefined,
+          replyParameters: {
+            message_id: message.message_id,
+            chat_id: message.chat.id,
+          },
         });
       } else {
         await this.edit({
