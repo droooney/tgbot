@@ -585,8 +585,8 @@ blockquote row 9`,
 
     const filePath = path.resolve(`./examples/downloads/${document.file_id}`);
 
-    await bot.downloadDocument({
-      document,
+    await bot.downloadFile({
+      fileId: document.file_id,
       path: filePath,
     });
 

@@ -8,8 +8,6 @@ import {
   BotCommand,
   CallbackQuery,
   ChatShared,
-  Document,
-  File,
   Message,
   UpdateType,
   User,
@@ -118,16 +116,9 @@ export type CallbackQueryHandler<
 
 export type BaseCommand = `/${string}`;
 
-export type DownloadOptions = {
+export type DownloadFileOptions = {
+  fileId: string;
   path: string;
-};
-
-export type DownloadDocumentOptions = DownloadOptions & {
-  document: Document;
-};
-
-export type DownloadFileOptions = DownloadOptions & {
-  file: File;
 };
 
 export type TelegramBotEvents = {
@@ -182,18 +173,13 @@ export class TelegramBot<
     }
   }
 
-  async downloadDocument(options: DownloadDocumentOptions): Promise<void> {
-    return this.downloadFile({
-      path: options.path,
-      file: await this.api.getFile({
-        file_id: options.document.file_id,
-      }),
-    });
-  }
-
   async downloadFile(options: DownloadFileOptions): Promise<void> {
+    const file = await this.api.getFile({
+      file_id: options.fileId,
+    });
+
     await new Promise((resolve, reject) => {
-      const url = new URL(`${this.baseURL}/file/bot${this.token}/${options.file.file_path}`);
+      const url = new URL(`${this.baseURL}/file/bot${this.token}/${file.file_path}`);
       const req = (url.protocol === 'https:' ? httpsRequest : httpRequest)(url);
       const writeStream = createWriteStream(options.path, 'utf8');
 
