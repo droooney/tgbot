@@ -1,10 +1,15 @@
 import { EventEmitter } from 'node:events';
+import { createWriteStream } from 'node:fs';
+import { request as httpRequest } from 'node:http';
+import { request as httpsRequest } from 'node:https';
 
 import { TelegramBot as TelegramBotApi } from 'typescript-telegram-bot-api';
 import {
   BotCommand,
   CallbackQuery,
   ChatShared,
+  Document,
+  File,
   Message,
   UpdateType,
   User,
@@ -57,6 +62,7 @@ export type BotCommands<CommandType extends BaseCommand> = Partial<Record<Comman
 
 export type TelegramBotOptions<CommandType extends BaseCommand, CallbackData, UserData> = {
   token: string;
+  baseURL?: string;
   allowedUpdates?: UpdateType[];
   commands?: BotCommands<CommandType>;
   callbackDataProvider?: CallbackDataProvider<NoInfer<CommandType>, CallbackData, NoInfer<UserData>>;
@@ -112,6 +118,18 @@ export type CallbackQueryHandler<
 
 export type BaseCommand = `/${string}`;
 
+export type DownloadOptions = {
+  path: string;
+};
+
+export type DownloadDocumentOptions = DownloadOptions & {
+  document: Document;
+};
+
+export type DownloadFileOptions = DownloadOptions & {
+  file: File;
+};
+
 export type TelegramBotEvents = {
   actionError: [err: unknown];
 };
@@ -131,6 +149,8 @@ export class TelegramBot<
   private _chatSharedHandler?: ChatSharedHandler<CommandType, CallbackData, UserData>;
   private _meInfo?: User;
 
+  readonly token: string;
+  readonly baseURL: string;
   readonly api: TelegramBotApi;
   readonly commands?: BotCommands<CommandType>;
   readonly callbackDataProvider?: CallbackDataProvider<CommandType, CallbackData, UserData>;
@@ -140,6 +160,8 @@ export class TelegramBot<
   constructor(options: TelegramBotOptions<CommandType, CallbackData, UserData>) {
     super();
 
+    this.token = options.token;
+    this.baseURL = options.baseURL ?? 'https://api.telegram.org';
     this.api = new TelegramBotApi({
       botToken: options.token,
       allowedUpdates: options.allowedUpdates,
@@ -158,6 +180,33 @@ export class TelegramBot<
     } else {
       console.log(prepareErrorForLogging(err));
     }
+  }
+
+  async downloadDocument(options: DownloadDocumentOptions): Promise<void> {
+    return this.downloadFile({
+      path: options.path,
+      file: await this.api.getFile({
+        file_id: options.document.file_id,
+      }),
+    });
+  }
+
+  async downloadFile(options: DownloadFileOptions): Promise<void> {
+    await new Promise((resolve, reject) => {
+      const url = new URL(`${this.baseURL}/file/bot${this.token}/${options.file.file_path}`);
+      const req = (url.protocol === 'https:' ? httpsRequest : httpRequest)(url);
+      const writeStream = createWriteStream(options.path, 'utf8');
+
+      writeStream.on('error', reject);
+      writeStream.on('finish', resolve);
+
+      req.on('error', reject);
+      req.on('response', (response) => {
+        response.pipe(writeStream);
+      });
+
+      req.end();
+    });
   }
 
   handleChatShared(handler: ChatSharedHandler<CommandType, CallbackData, UserData>): this {

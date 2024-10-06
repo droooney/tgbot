@@ -1,4 +1,5 @@
-import fs from 'node:fs';
+import { createReadStream } from 'node:fs';
+import { readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { performance } from 'node:perf_hooks';
 
@@ -49,6 +50,7 @@ type CallbackData =
   | 'editSimpleText'
   | 'editPhoto'
   | 'editAudio'
+  | 'readDocument'
   | 'editDocument'
   | 'editDocumentWithPhoto'
   | 'editVideo'
@@ -200,7 +202,7 @@ blockquote row 9`,
     return new MessageAction({
       content: {
         type: 'photo',
-        photo: fs.createReadStream(path.resolve('./examples/assets/house.png')),
+        photo: createReadStream(path.resolve('./examples/assets/house.png')),
         text: Markdown.create`caption with ${Markdown.bold('bold')} text`,
       },
       replyMarkup: [
@@ -219,11 +221,11 @@ blockquote row 9`,
     return new MessageAction({
       content: {
         type: 'audio',
-        audio: fs.createReadStream(path.resolve('./examples/assets/audio1.mp3')),
+        audio: createReadStream(path.resolve('./examples/assets/audio1.mp3')),
         text: Markdown.create`caption with ${Markdown.bold('bold')} text`,
         performer: 'Cool performer',
         title: 'Cool title',
-        thumbnail: fs.createReadStream(path.resolve('./examples/assets/thumb1.png')),
+        thumbnail: createReadStream(path.resolve('./examples/assets/thumb1.png')),
       },
       replyMarkup: [
         [
@@ -241,10 +243,17 @@ blockquote row 9`,
     return new MessageAction({
       content: {
         type: 'document',
-        document: fs.createReadStream(path.resolve('./examples/assets/file1.txt')),
+        document: createReadStream(path.resolve('./examples/assets/file1.txt')),
         text: Markdown.create`caption with ${Markdown.bold('bold')} text`,
       },
       replyMarkup: [
+        [
+          {
+            type: 'callbackData',
+            text: 'Read document',
+            callbackData: 'readDocument',
+          },
+        ],
         [
           {
             type: 'callbackData',
@@ -270,7 +279,7 @@ blockquote row 9`,
         new MessageAction({
           content: {
             type: 'document',
-            document: fs.createReadStream(path.resolve('./examples/assets/video0.mp4')),
+            document: createReadStream(path.resolve('./examples/assets/video0.mp4')),
           },
         }),
     });
@@ -283,9 +292,9 @@ blockquote row 9`,
         new MessageAction({
           content: {
             type: 'video',
-            video: fs.createReadStream(path.resolve('./examples/assets/video1.mp4')),
+            video: createReadStream(path.resolve('./examples/assets/video1.mp4')),
             text: Markdown.create`caption with ${Markdown.bold('bold')} text`,
-            thumbnail: fs.createReadStream(path.resolve('./examples/assets/thumb1.png')),
+            thumbnail: createReadStream(path.resolve('./examples/assets/thumb1.png')),
           },
           replyMarkup: [
             [
@@ -304,9 +313,9 @@ blockquote row 9`,
     return new MessageAction({
       content: {
         type: 'animation',
-        animation: fs.createReadStream(path.resolve('./examples/assets/animation1.gif')),
+        animation: createReadStream(path.resolve('./examples/assets/animation1.gif')),
         text: Markdown.create`caption with ${Markdown.bold('bold')} text`,
-        thumbnail: fs.createReadStream(path.resolve('./examples/assets/thumb1.png')),
+        thumbnail: createReadStream(path.resolve('./examples/assets/thumb1.png')),
       },
       replyMarkup: [
         [
@@ -324,7 +333,7 @@ blockquote row 9`,
     return new MessageAction({
       content: {
         type: 'voice',
-        voice: fs.createReadStream(path.resolve('./examples/assets/audio1.mp3')),
+        voice: createReadStream(path.resolve('./examples/assets/audio1.mp3')),
         text: Markdown.create`caption with ${Markdown.bold('bold')} text`,
       },
     });
@@ -337,8 +346,8 @@ blockquote row 9`,
         new MessageAction({
           content: {
             type: 'videoNote',
-            videoNote: fs.createReadStream(path.resolve('./examples/assets/video_note.mp4')),
-            thumbnail: fs.createReadStream(path.resolve('./examples/assets/thumb1.png')),
+            videoNote: createReadStream(path.resolve('./examples/assets/video_note.mp4')),
+            thumbnail: createReadStream(path.resolve('./examples/assets/thumb1.png')),
           },
         }),
     });
@@ -352,11 +361,11 @@ blockquote row 9`,
         media: [
           {
             type: 'photo',
-            media: fs.createReadStream(path.resolve('./examples/assets/house.png')),
+            media: createReadStream(path.resolve('./examples/assets/house.png')),
           },
           {
             type: 'video',
-            media: fs.createReadStream(path.resolve('./examples/assets/video1.mp4')),
+            media: createReadStream(path.resolve('./examples/assets/video1.mp4')),
           },
         ],
       },
@@ -373,11 +382,11 @@ blockquote row 9`,
             media: [
               {
                 type: 'photo',
-                media: fs.createReadStream(path.resolve('./examples/assets/house.png')),
+                media: createReadStream(path.resolve('./examples/assets/house.png')),
               },
               {
                 type: 'video',
-                media: fs.createReadStream(path.resolve('./examples/assets/video1.mp4')),
+                media: createReadStream(path.resolve('./examples/assets/video1.mp4')),
               },
             ],
           },
@@ -544,7 +553,7 @@ blockquote row 9`,
     return new MessageAction({
       content: {
         type: 'photo',
-        photo: fs.createReadStream(path.resolve('./examples/assets/house_heart.png')),
+        photo: createReadStream(path.resolve('./examples/assets/house_heart.png')),
         text: Markdown.create`edited caption with ${Markdown.bold('bold')} text`,
         showCaptionAboveMedia: true,
         hasSpoiler: true,
@@ -556,12 +565,37 @@ blockquote row 9`,
     return new MessageAction({
       content: {
         type: 'audio',
-        audio: fs.createReadStream(path.resolve('./examples/assets/audio2.mp3')),
+        audio: createReadStream(path.resolve('./examples/assets/audio2.mp3')),
         text: Markdown.create`edited caption with ${Markdown.bold('bold')} text`,
         performer: 'New performer',
         title: 'New title',
-        thumbnail: fs.createReadStream(path.resolve('./examples/assets/thumb2.png')),
+        thumbnail: createReadStream(path.resolve('./examples/assets/thumb2.png')),
       },
+    });
+  });
+
+  callbackDataProvider.handle('readDocument', async ({ message }) => {
+    const { document } = message;
+
+    if (!document) {
+      return new NotificationAction({
+        text: 'No document',
+      });
+    }
+
+    const filePath = path.resolve(`./examples/downloads/${document.file_id}`);
+
+    await bot.downloadDocument({
+      document,
+      path: filePath,
+    });
+
+    const fileContent = await readFile(filePath, 'utf8');
+
+    await rm(filePath);
+
+    return new NotificationAction({
+      text: `Text from document: ${JSON.stringify(fileContent)}`,
     });
   });
 
@@ -569,7 +603,7 @@ blockquote row 9`,
     return new MessageAction({
       content: {
         type: 'document',
-        document: fs.createReadStream(path.resolve('./examples/assets/file2.txt')),
+        document: createReadStream(path.resolve('./examples/assets/file2.txt')),
         text: Markdown.create`edited caption with ${Markdown.bold('bold')} text`,
       },
     });
@@ -579,9 +613,9 @@ blockquote row 9`,
     return new MessageAction({
       content: {
         type: 'video',
-        video: fs.createReadStream(path.resolve('./examples/assets/video2.mp4')),
+        video: createReadStream(path.resolve('./examples/assets/video2.mp4')),
         text: Markdown.create`edited caption with ${Markdown.bold('bold')} text`,
-        thumbnail: fs.createReadStream(path.resolve('./examples/assets/thumb2.png')),
+        thumbnail: createReadStream(path.resolve('./examples/assets/thumb2.png')),
         showCaptionAboveMedia: true,
         hasSpoiler: true,
       },
@@ -592,9 +626,9 @@ blockquote row 9`,
     return new MessageAction({
       content: {
         type: 'animation',
-        animation: fs.createReadStream(path.resolve('./examples/assets/animation2.gif')),
+        animation: createReadStream(path.resolve('./examples/assets/animation2.gif')),
         text: Markdown.create`edited caption with ${Markdown.bold('bold')} text`,
-        thumbnail: fs.createReadStream(path.resolve('./examples/assets/thumb2.png')),
+        thumbnail: createReadStream(path.resolve('./examples/assets/thumb2.png')),
         showCaptionAboveMedia: true,
         hasSpoiler: true,
       },
