@@ -3,13 +3,16 @@ import { MaybePromise } from '../types';
 import { UserDataProvider } from './UserDataProvider';
 
 export type StringUserDataProviderOptions<UserData extends string> = {
-  getOrCreateUserData(userId: number): MaybePromise<UserData>;
-  setUserData(userId: number, data: UserData): MaybePromise<void>;
+  getOrCreateUserData: (userId: number) => MaybePromise<UserData>;
+  setUserData: (userId: number, data: UserData) => MaybePromise<void>;
 };
 
 /* eslint-disable brace-style */
-export class StringUserDataProvider<CommandType extends BaseCommand, CallbackData, UserData extends string>
-  implements UserDataProvider<CommandType, CallbackData, UserData>
+export class StringUserDataProvider<
+  CommandType extends BaseCommand = never,
+  CallbackData = never,
+  UserData extends string = never,
+> implements UserDataProvider<CommandType, CallbackData, UserData>
 {
   /* eslint-enable brace-style */
   private readonly _handlers: {

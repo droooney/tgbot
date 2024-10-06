@@ -269,7 +269,7 @@ export class TelegramBot<
         };
         const commands =
           entities
-            ?.filter(({ type, offset, length }) => type === 'bot_command')
+            ?.filter(({ type }) => type === 'bot_command')
             .map(({ offset, length }) => {
               const fullCommand = text?.slice(offset, offset + length);
 

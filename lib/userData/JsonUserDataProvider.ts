@@ -14,15 +14,15 @@ export type JsonUserDataByState<
 > = Filter<UserData, { state: T }>;
 
 export type JsonUserDataProviderOptions<UserData extends BaseJsonUserData<BaseJsonUserDataState>> = {
-  getOrCreateUserData(userId: number): MaybePromise<UserData>;
-  setUserData(userId: number, data: UserData): MaybePromise<void>;
+  getOrCreateUserData: (userId: number) => MaybePromise<UserData>;
+  setUserData: (userId: number, data: UserData) => MaybePromise<void>;
 };
 
 /* eslint-disable brace-style */
 export class JsonUserDataProvider<
-  CommandType extends BaseCommand,
-  CallbackData,
-  UserData extends BaseJsonUserData<BaseJsonUserDataState>,
+  CommandType extends BaseCommand = never,
+  CallbackData = never,
+  UserData extends BaseJsonUserData<BaseJsonUserDataState> = never,
 > implements UserDataProvider<CommandType, CallbackData, UserData>
 {
   /* eslint-enable brace-style */

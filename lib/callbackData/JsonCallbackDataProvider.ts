@@ -1,5 +1,5 @@
 import { BaseCommand, CallbackQueryHandler } from '../TelegramBot';
-import { Filter } from '../types';
+import { Filter, MaybePromise } from '../types';
 import { CallbackDataProvider } from './CallbackDataProvider';
 
 export type BaseJsonCallbackDataType = string;
@@ -38,7 +38,7 @@ export class JsonCallbackDataProvider<
   } = {};
   private readonly _parseJson: (json: string) => CallbackData;
 
-  constructor(options: JsonCallbackDataProviderOptions<CallbackData['type'], CallbackData>) {
+  constructor(options: JsonCallbackDataProviderOptions<CallbackData['type'], CallbackData> = {}) {
     this._parseJson = options.parseJson ?? JSON.parse;
   }
 
@@ -63,7 +63,7 @@ export class JsonCallbackDataProvider<
     return this;
   }
 
-  parseCallbackData(dataString: string): CallbackData | null {
+  parseCallbackData(dataString: string): MaybePromise<CallbackData | null> {
     let data: CallbackData;
 
     try {
@@ -75,7 +75,7 @@ export class JsonCallbackDataProvider<
     return data;
   }
 
-  stringifyData(data: CallbackData): string {
+  stringifyData(data: CallbackData): MaybePromise<string> {
     return JSON.stringify(data);
   }
 }

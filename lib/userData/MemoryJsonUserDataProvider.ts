@@ -8,9 +8,9 @@ export type MemoryJsonUserDataProviderOptions<UserData extends BaseJsonUserData<
 };
 
 export class MemoryJsonUserDataProvider<
-  CommandType extends BaseCommand,
-  CallbackData,
-  UserData extends BaseJsonUserData<BaseJsonUserDataState>,
+  CommandType extends BaseCommand = never,
+  CallbackData = never,
+  UserData extends BaseJsonUserData<BaseJsonUserDataState> = never,
 > extends JsonUserDataProvider<CommandType, CallbackData, UserData> {
   private readonly _userDataMap = new Map<number, UserData>();
   private readonly _getDefaultValue: (userId: number) => MaybePromise<UserData>;
@@ -26,5 +26,9 @@ export class MemoryJsonUserDataProvider<
     const { defaultValue } = options;
 
     this._getDefaultValue = typeof defaultValue === 'function' ? defaultValue : () => defaultValue;
+  }
+
+  clear(): void {
+    this._userDataMap.clear();
   }
 }

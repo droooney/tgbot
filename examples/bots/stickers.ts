@@ -5,8 +5,8 @@ import { z } from 'zod';
 
 import {
   ActionsStreamAction,
-  JsonCallbackDataProvider,
   MessageAction as LibMessageAction,
+  MemoryJsonStorageCallbackDataProvider,
   TelegramBot,
   WaitingAction,
 } from '../../lib';
@@ -20,7 +20,7 @@ type BotCommand = keyof typeof commands;
 
 const callbackData = z.object({
   type: z.literal('deleteSet'),
-  id: z.string(),
+  name: z.string(),
 });
 
 type CallbackData = z.TypeOf<typeof callbackData>;
@@ -28,20 +28,12 @@ type CallbackData = z.TypeOf<typeof callbackData>;
 const MessageAction = LibMessageAction<BotCommand, CallbackData>;
 
 const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
-  const callbackDataProvider = new JsonCallbackDataProvider<BotCommand, CallbackData>({
-    parseJson: (json) => callbackData.parse(JSON.parse(json)),
-  });
+  const callbackDataProvider = new MemoryJsonStorageCallbackDataProvider<BotCommand, CallbackData>();
   const bot = new TelegramBot({
     token,
     commands,
     callbackDataProvider,
   });
-
-  const getTestSetName = async (id: string): Promise<string> => {
-    const info = await bot.api.getMe();
-
-    return `test_${id}_by_${info.username}`;
-  };
 
   bot.handleCommand('/create_sticker_set', async (ctx) => {
     const user = ctx.message.from;
@@ -53,8 +45,7 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
     return new WaitingAction({
       type: 'choose_sticker',
       getAction: async () => {
-        const id = Math.random().toString().slice(2);
-        const name = await getTestSetName(id);
+        const name = `test_${Math.random().toString().slice(2)}_by_${(await bot.api.getMe()).username}`;
 
         await bot.api.createNewStickerSet({
           user_id: user.id,
@@ -92,7 +83,7 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
                   text: 'Delete set',
                   callbackData: {
                     type: 'deleteSet',
-                    id,
+                    name,
                   },
                 },
               ],
@@ -119,9 +110,9 @@ const createBot: CreateBot<BotCommand, CallbackData> = (token) => {
     });
   });
 
-  callbackDataProvider.handle('deleteSet', async ({ data: { id } }) => {
+  callbackDataProvider.handle('deleteSet', async ({ data: { name } }) => {
     await bot.api.deleteStickerSet({
-      name: await getTestSetName(id),
+      name,
     });
 
     return new MessageAction({
