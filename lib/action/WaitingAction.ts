@@ -4,7 +4,7 @@ import { TelegramBot as LibTelegramBot } from 'typescript-telegram-bot-api';
 
 import { BaseCommand } from '../TelegramBot';
 import { MaybePromise } from '../types';
-import { delay } from '../utils';
+import { PromiseWithResolvers, delay, promiseWithResolvers } from '../utils';
 import { Action, ActionOnMessage, ActionOnMessageContext } from './Action';
 
 export type WaitingActionType = Parameters<LibTelegramBot['sendChatAction']>[0]['action'];
@@ -37,7 +37,7 @@ export class WaitingAction<CommandType extends BaseCommand = never, CallbackData
   }
 
   async onMessage(ctx: ActionOnMessageContext<CommandType, CallbackData, UserData>): Promise<void> {
-    let promiseWithResolvers: PromiseWithResolvers<void> | undefined;
+    let promise: PromiseWithResolvers<void> | undefined;
     let actionSent = false;
 
     await Promise.all([
@@ -49,7 +49,7 @@ export class WaitingAction<CommandType extends BaseCommand = never, CallbackData
         } finally {
           actionSent = true;
 
-          promiseWithResolvers?.resolve();
+          promise?.resolve();
         }
       })(),
       (async () => {
@@ -67,10 +67,10 @@ export class WaitingAction<CommandType extends BaseCommand = never, CallbackData
             break;
           }
 
-          promiseWithResolvers = Promise.withResolvers();
+          promise = promiseWithResolvers();
 
           await Promise.race([
-            promiseWithResolvers.promise,
+            promise.promise,
             (async () => {
               const elapsed = performance.now() - timestamp;
 
